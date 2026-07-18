@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@layer base {
+  body { @apply min-h-screen bg-orange-50 text-slate-900; }
+  h2 { @apply mb-4 text-lg font-semibold; }
+  input, select { @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2; }
+  button { @apply rounded-md bg-orange-600 px-3 py-2 font-medium text-white hover:bg-orange-700 disabled:opacity-50; }
+  table { @apply w-full text-left; }
+  th { @apply border-b pb-2 text-sm text-slate-500; }
+  td { @apply border-b py-2; }
+}
+@layer components { .card { @apply rounded-xl bg-white p-5 shadow-sm; } }

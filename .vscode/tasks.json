@@ -1,0 +1,38 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "api: run",
+      "type": "shell",
+      "command": "dotnet run --project src\\TurboFi.Api",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "web: run",
+      "type": "npm",
+      "script": "dev",
+      "path": "src/turbo-fi-web",
+      "problemMatcher": []
+    },
+    {
+      "label": "docker: up",
+      "type": "shell",
+      "command": "docker compose up --build",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: api",
+      "type": "shell",
+      "command": "dotnet test",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test: web",
+      "type": "npm",
+      "script": "test",
+      "path": "src/turbo-fi-web",
+      "problemMatcher": []
+    }
+  ]
+}
+
