@@ -1,0 +1,33 @@
+{
+  "name": "TurboFi Development",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "devcontainer",
+  "workspaceFolder": "/workspaces/turbo-fi",
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": true,
+  "shutdownAction": "stopCompose",
+  "forwardPorts": [5173, 8080, 1433],
+  "portsAttributes": {
+    "5173": {
+      "label": "Vite web app",
+      "onAutoForward": "openBrowser"
+    },
+    "8080": {
+      "label": "TurboFi API"
+    },
+    "1433": {
+      "label": "SQL Server"
+    }
+  },
+  "postCreateCommand": "dotnet restore TurboFi.sln && npm ci --prefix src/turbo-fi-web && (gh extension install github/gh-copilot || gh extension upgrade github/gh-copilot || true)",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csdevkit",
+        "ms-dotnettools.csharp",
+        "bradlc.vscode-tailwindcss",
+        "ms-mssql.mssql"
+      ]
+    }
+  }
+}

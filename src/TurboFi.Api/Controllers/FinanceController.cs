@@ -42,25 +42,42 @@ public sealed class FinanceController(TurboFiDbContext db) : ControllerBase
     }
 
     [HttpGet("planned-entries")]
-    public Task<List<PlannedEntry>> PlannedEntries() => db.PlannedEntries
-        .Where(entry => entry.HouseholdId == HouseholdId).OrderBy(entry => entry.DayOfMonth).ToListAsync();
+    public Task<List<PlannedEntryResponse>> PlannedEntries() => db.PlannedEntries
+        .Where(entry => entry.HouseholdId == HouseholdId).OrderBy(entry => entry.DayOfMonth)
+        .Select(entry => new PlannedEntryResponse(entry.Id, entry.CategoryId, entry.Amount, entry.DayOfMonth, entry.IsFixed))
+        .ToListAsync();
 
     [HttpPost("planned-entries")]
-    public async Task<ActionResult<PlannedEntry>> CreatePlannedEntry(PlannedEntryRequest request)
+    public async Task<ActionResult<PlannedEntryResponse>> CreatePlannedEntry(PlannedEntryRequest request)
     {
+        if (request.Amount == 0) return BadRequest("Amount cannot be zero.");
         if (request.DayOfMonth is < 1 or > 31) return BadRequest("Day of month must be between 1 and 31.");
-        if (!await db.FinancialAccounts.AnyAsync(account => account.Id == request.FinancialAccountId && account.HouseholdId == HouseholdId)
-            || !await db.Categories.AnyAsync(category => category.Id == request.CategoryId && category.HouseholdId == HouseholdId))
-            return BadRequest("Account and category must belong to your household.");
+        var category = await db.Categories.SingleOrDefaultAsync(category => category.Id == request.CategoryId && category.HouseholdId == HouseholdId);
+        if (category is null) return BadRequest("Category must belong to your household.");
+        if (await db.PlannedEntries.AnyAsync(entry => entry.HouseholdId == HouseholdId && entry.CategoryId == request.CategoryId))
+            return Conflict("This category already has a monthly plan.");
 
         var entry = new PlannedEntry
         {
-            HouseholdId = HouseholdId, FinancialAccountId = request.FinancialAccountId, CategoryId = request.CategoryId,
-            Name = request.Name.Trim(), Amount = request.Amount, DayOfMonth = request.DayOfMonth
+            HouseholdId = HouseholdId,
+            // These legacy columns are retained for existing EnsureCreated databases; plans are category-level.
+            FinancialAccountId = Guid.Empty, Name = category.Name, CategoryId = request.CategoryId,
+            Amount = Math.Abs(request.Amount), DayOfMonth = request.DayOfMonth, IsFixed = request.IsFixed
         };
         db.PlannedEntries.Add(entry);
         await db.SaveChangesAsync();
-        return Created($"api/planned-entries/{entry.Id}", entry);
+        return Created($"api/planned-entries/{entry.Id}", new PlannedEntryResponse(entry.Id, entry.CategoryId, entry.Amount, entry.DayOfMonth, entry.IsFixed));
+    }
+
+    [HttpDelete("planned-entries/{id:guid}")]
+    public async Task<ActionResult> DeletePlannedEntry(Guid id)
+    {
+        var entry = await db.PlannedEntries.SingleOrDefaultAsync(entry => entry.Id == id && entry.HouseholdId == HouseholdId);
+        if (entry is null) return NotFound();
+
+        db.PlannedEntries.Remove(entry);
+        await db.SaveChangesAsync();
+        return NoContent();
     }
 
     [HttpGet("dashboard")]
@@ -69,26 +86,46 @@ public sealed class FinanceController(TurboFiDbContext db) : ControllerBase
         var now = DateOnly.FromDateTime(DateTime.UtcNow);
         var start = new DateOnly(year ?? now.Year, month ?? now.Month, 1);
         var end = start.AddMonths(1);
+        var planSchedule = await db.PlannedEntries.Where(entry => entry.HouseholdId == HouseholdId && entry.IsActive)
+            .Select(entry => new { Amount = Math.Abs(entry.Amount), entry.DayOfMonth }).ToListAsync();
         var planned = await db.PlannedEntries.Where(entry => entry.HouseholdId == HouseholdId && entry.IsActive)
             .GroupBy(entry => entry.CategoryId)
-            .Select(group => new { CategoryId = group.Key, Planned = group.Sum(entry => entry.Amount) }).ToListAsync();
+            .Select(group => new { CategoryId = group.Key, Planned = group.Sum(entry => Math.Abs(entry.Amount)), DayOfMonth = group.Min(entry => entry.DayOfMonth), IsFixed = group.All(entry => entry.IsFixed) }).ToListAsync();
         var actual = await db.FinancialTransactions.Where(transaction => transaction.HouseholdId == HouseholdId
-                && transaction.CategoryId != null && transaction.TransactionDate >= start && transaction.TransactionDate < end)
+                && !transaction.IsTransfer && transaction.CategoryId != null && transaction.Amount < 0
+                && transaction.TransactionDate >= start && transaction.TransactionDate < end)
             .GroupBy(transaction => transaction.CategoryId!.Value)
-            .Select(group => new { CategoryId = group.Key, Actual = group.Sum(transaction => transaction.Amount) }).ToListAsync();
+            .Select(group => new { CategoryId = group.Key, Actual = group.Sum(transaction => -transaction.Amount) }).ToListAsync();
         var categories = await db.Categories.Where(category => category.HouseholdId == HouseholdId).ToDictionaryAsync(category => category.Id, category => category.Name);
         var categoryTotals = planned.Select(item => item.CategoryId).Union(actual.Select(item => item.CategoryId)).Select(id => new
         {
             categoryId = id,
             name = categories.GetValueOrDefault(id, "Uncategorized"),
             planned = planned.FirstOrDefault(item => item.CategoryId == id)?.Planned ?? 0m,
-            actual = actual.FirstOrDefault(item => item.CategoryId == id)?.Actual ?? 0m
+            actual = actual.FirstOrDefault(item => item.CategoryId == id)?.Actual ?? 0m,
+            dayOfMonth = planned.FirstOrDefault(item => item.CategoryId == id)?.DayOfMonth ?? 1,
+            isFixed = planned.FirstOrDefault(item => item.CategoryId == id)?.IsFixed ?? false
         }).OrderBy(item => item.name);
-        var reviewCount = await db.FinancialTransactions.CountAsync(transaction => transaction.HouseholdId == HouseholdId && transaction.CategoryId == null);
-        return Ok(new { month = start.ToString("yyyy-MM"), reviewCount, categories = categoryTotals });
+        var reviewCount = await db.FinancialTransactions.CountAsync(transaction =>
+            transaction.HouseholdId == HouseholdId && !transaction.IsTransfer && transaction.CategoryId == null);
+        var dailyActuals = await db.FinancialTransactions.Where(transaction => transaction.HouseholdId == HouseholdId
+                && !transaction.IsTransfer && transaction.CategoryId != null && transaction.Amount < 0
+                && transaction.TransactionDate >= start && transaction.TransactionDate < end)
+            .GroupBy(transaction => transaction.TransactionDate)
+            .Select(group => new { Day = group.Key.Day, Actual = group.Sum(transaction => -transaction.Amount) })
+            .ToDictionaryAsync(item => item.Day, item => item.Actual);
+        var daysInMonth = DateTime.DaysInMonth(start.Year, start.Month);
+        var burndown = Enumerable.Range(1, daysInMonth).Select(day => new
+        {
+            day,
+            planned = planSchedule.Where(entry => Math.Min(entry.DayOfMonth, daysInMonth) <= day).Sum(entry => entry.Amount),
+            actual = Enumerable.Range(1, day).Sum(actualDay => dailyActuals.GetValueOrDefault(actualDay))
+        });
+        return Ok(new { month = start.ToString("yyyy-MM"), reviewCount, categories = categoryTotals, burndown });
     }
 }
 
 public sealed record AccountRequest(string Name, string? Institution, string? LastFour);
 public sealed record CategoryRequest(string Name, string? Color);
-public sealed record PlannedEntryRequest(string Name, Guid FinancialAccountId, Guid CategoryId, decimal Amount, int DayOfMonth);
+public sealed record PlannedEntryRequest(Guid CategoryId, decimal Amount, int DayOfMonth, bool IsFixed = false);
+public sealed record PlannedEntryResponse(Guid Id, Guid CategoryId, decimal Amount, int DayOfMonth, bool IsFixed);

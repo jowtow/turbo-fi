@@ -23,7 +23,7 @@ public sealed class AuthController(
         var household = new Household { Name = request.HouseholdName.Trim() };
         var user = new ApplicationUser { UserName = request.Email, Email = request.Email, Household = household };
         var result = await userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded) return ValidationProblem(result.Errors.ToDictionary(error => error.Code, error => new[] { error.Description }));
+        if (!result.Succeeded) return ValidationProblem(new ValidationProblemDetails(result.Errors.ToDictionary(error => error.Code, error => new[] { error.Description })));
 
         household.OwnerUserId = user.Id;
         await db.SaveChangesAsync();

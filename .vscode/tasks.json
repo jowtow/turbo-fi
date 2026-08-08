@@ -4,7 +4,12 @@
     {
       "label": "api: run",
       "type": "shell",
-      "command": "dotnet run --project src\\TurboFi.Api",
+      "command": "dotnet run --project src/TurboFi.Api",
+      "options": {
+        "env": {
+          "ASPNETCORE_URLS": "http://0.0.0.0:8080"
+        }
+      },
       "problemMatcher": "$msCompile"
     },
     {
@@ -12,12 +17,25 @@
       "type": "npm",
       "script": "dev",
       "path": "src/turbo-fi-web",
+      "args": ["--", "--host", "0.0.0.0", "--port", "5173"],
       "problemMatcher": []
     },
     {
-      "label": "docker: up",
+      "label": "db: up",
       "type": "shell",
-      "command": "docker compose up --build",
+      "command": "docker compose up -d database",
+      "problemMatcher": []
+    },
+    {
+      "label": "db: down",
+      "type": "shell",
+      "command": "docker compose down",
+      "problemMatcher": []
+    },
+    {
+      "label": "db: down (delete volume)",
+      "type": "shell",
+      "command": "docker compose down -v",
       "problemMatcher": []
     },
     {
@@ -35,4 +53,3 @@
     }
   ]
 }
-

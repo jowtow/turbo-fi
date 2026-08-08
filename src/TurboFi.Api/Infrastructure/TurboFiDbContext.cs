@@ -27,6 +27,8 @@ public sealed class TurboFiDbContext(DbContextOptions<TurboFiDbContext> options)
             transaction.HouseholdId, transaction.FinancialAccountId, transaction.ImportFingerprint
         }).IsUnique();
         builder.Entity<FinancialTransaction>().Property(transaction => transaction.Amount).HasPrecision(18, 2);
+        builder.Entity<FinancialTransaction>().Property(transaction => transaction.TransferDestinationName).HasMaxLength(200);
         builder.Entity<PlannedEntry>().Property(entry => entry.Amount).HasPrecision(18, 2);
+        builder.Entity<PlannedEntry>().Property(entry => entry.IsFixed).HasDefaultValue(false);
     }
 }

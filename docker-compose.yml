@@ -14,29 +14,5 @@ services:
       timeout: 5s
       retries: 12
 
-  api:
-    build:
-      context: .
-      dockerfile: src/TurboFi.Api/Dockerfile
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__TurboFi: "Server=database;Database=TurboFi;User Id=sa;Password=${MSSQL_SA_PASSWORD:-TurboFiDev!123};TrustServerCertificate=True"
-      ASPNETCORE_URLS: http://+:8080
-    ports:
-      - "8080:8080"
-    depends_on:
-      database:
-        condition: service_healthy
-
-  web:
-    build:
-      context: ./src/turbo-fi-web
-      dockerfile: Dockerfile
-    ports:
-      - "5173:80"
-    depends_on:
-      - api
-
 volumes:
   sqlserver-data:
-

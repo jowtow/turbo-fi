@@ -42,7 +42,30 @@ app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
 using (var scope = app.Services.CreateScope())
 {
-    await scope.ServiceProvider.GetRequiredService<TurboFiDbContext>().Database.EnsureCreatedAsync();
+    var db = scope.ServiceProvider.GetRequiredService<TurboFiDbContext>();
+    await db.Database.EnsureCreatedAsync();
+    await db.Database.ExecuteSqlRawAsync("""
+        IF COL_LENGTH('dbo.PlannedEntries', 'IsFixed') IS NULL
+        BEGIN
+            ALTER TABLE dbo.PlannedEntries ADD IsFixed bit NOT NULL
+                CONSTRAINT DF_PlannedEntries_IsFixed DEFAULT 0;
+        END
+        """);
+    await db.Database.ExecuteSqlRawAsync("""
+        IF COL_LENGTH('dbo.FinancialTransactions', 'IsTransfer') IS NULL
+        BEGIN
+            ALTER TABLE dbo.FinancialTransactions ADD IsTransfer bit NOT NULL
+                CONSTRAINT DF_FinancialTransactions_IsTransfer DEFAULT 0;
+        END
+        IF COL_LENGTH('dbo.FinancialTransactions', 'TransferDestinationAccountId') IS NULL
+        BEGIN
+            ALTER TABLE dbo.FinancialTransactions ADD TransferDestinationAccountId uniqueidentifier NULL;
+        END
+        IF COL_LENGTH('dbo.FinancialTransactions', 'TransferDestinationName') IS NULL
+        BEGIN
+            ALTER TABLE dbo.FinancialTransactions ADD TransferDestinationName nvarchar(200) NULL;
+        END
+        """);
 }
 
 app.Run();

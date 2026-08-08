@@ -41,7 +41,7 @@ public sealed class HouseholdsController(
 
         var user = new ApplicationUser { UserName = request.Email, Email = request.Email, HouseholdId = invitation.HouseholdId };
         var result = await userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded) return ValidationProblem(result.Errors.ToDictionary(error => error.Code, error => new[] { error.Description }));
+        if (!result.Succeeded) return ValidationProblem(new ValidationProblemDetails(result.Errors.ToDictionary(error => error.Code, error => new[] { error.Description })));
         invitation.AcceptedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync();
         return NoContent();

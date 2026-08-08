@@ -54,6 +54,7 @@ public sealed class PlannedEntry
     public required string Name { get; set; }
     public decimal Amount { get; set; }
     public int DayOfMonth { get; set; } = 1;
+    public bool IsFixed { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -68,6 +69,9 @@ public sealed class FinancialTransaction
     public decimal Amount { get; set; }
     public string? CheckNumber { get; set; }
     public string? Status { get; set; }
+    public bool IsTransfer { get; set; }
+    public Guid? TransferDestinationAccountId { get; set; }
+    public string? TransferDestinationName { get; set; }
     public required string ImportFingerprint { get; set; }
     public DateTimeOffset ImportedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? ReviewedAt { get; set; }
