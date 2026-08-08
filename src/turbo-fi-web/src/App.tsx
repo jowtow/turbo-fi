@@ -57,23 +57,23 @@ function App() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to sign in.') }
   }
   if (me.isLoading) return <main className="p-8">Loading Turbo Fi...</main>
-  if (!me.data) return <main className="mx-auto mt-20 max-w-md rounded-2xl bg-white p-8 shadow">
-    <Cat className="mb-3 text-orange-500" size={42} /><h1 className="text-3xl font-bold">Turbo Fi</h1>
-    <p className="mb-6 text-slate-600">Thoughtful household finance, with a little Turbo energy.</p>
+  if (!me.data) return <main className="mx-auto mt-20 max-w-md rounded-2xl border border-emerald-800 bg-emerald-950/60 p-8 shadow-lg shadow-lime-950/20">
+    <Cat className="mb-3 text-lime-400" size={42} /><h1 className="text-3xl font-bold">Turbo Fi</h1>
+    <p className="mb-6 text-emerald-200">Thoughtful household finance, with a little Turbo energy.</p>
     <form className="space-y-3" onSubmit={submitAuth}>
       {mode === 'register' && <input required name="householdName" placeholder="Household name" />}
       <input required name="email" type="email" placeholder="Email" />
       <input required name="password" minLength={10} type="password" placeholder="Password (10+ characters)" />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-300">{error}</p>}
       <button className="w-full" type="submit">{mode === 'register' ? 'Create household' : 'Sign in'}</button>
     </form>
-    <button className="mt-4 w-full bg-transparent text-orange-600" onClick={() => setMode(mode === 'register' ? 'login' : 'register')}>
+    <button className="mt-4 w-full bg-transparent text-lime-300 hover:bg-emerald-900/60" onClick={() => setMode(mode === 'register' ? 'login' : 'register')}>
       {mode === 'register' ? 'Already have an invitation? Sign in' : 'Need to create the first household?'}
     </button>
   </main>
 
   return <main className="mx-auto max-w-6xl p-6">
-    <header className="mb-8 flex items-center justify-between"><div><h1 className="flex items-center gap-2 text-3xl font-bold"><Cat className="text-orange-500" /> Turbo Fi</h1><p className="text-slate-600">{me.data.householdName} · {me.data.email}</p></div>
+    <header className="mb-8 flex items-center justify-between"><div><h1 className="flex items-center gap-2 text-3xl font-bold"><Cat className="text-lime-400" /> Turbo Fi</h1><p className="text-emerald-200">{me.data.householdName} · {me.data.email}</p></div>
       <button onClick={async () => { await api('/auth/logout', { method: 'POST' }); refresh() }}>Sign out</button></header>
     <section className="mb-8 grid gap-4 md:grid-cols-3">
       <Metric icon={<BarChart3 />} label="Planned this month" value={money(dashboard.data?.categories.reduce((sum, item) => sum + item.planned, 0) ?? 0)} />
@@ -83,12 +83,12 @@ function App() {
     <section className="grid gap-6 lg:grid-cols-3">
       <div className="card lg:col-span-2">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div><h2 className="mb-1">Plan versus actual</h2><p className="text-sm text-slate-600">Red means your attention is needed. Green means on track.</p></div>
+          <div><h2 className="mb-1">Plan versus actual</h2><p className="text-sm text-emerald-200">Red means your attention is needed. Green means on track.</p></div>
           <MonthPicker month={selectedMonth} onChange={setSelectedMonth} />
         </div>
         <div className="overflow-x-auto"><table><thead><tr><th>Category</th><th>Plan</th><th>Actual</th><th>Signal</th></tr></thead>
           <tbody>{dashboard.data?.categories.map(item => <PlanRow key={item.categoryId} item={item} month={selectedMonth} />)}</tbody></table></div>
-        {!dashboard.data?.categories.length && <p className="py-4 text-sm text-slate-600">Add a monthly plan to start tracking your spending pace.</p>}
+        {!dashboard.data?.categories.length && <p className="py-4 text-sm text-emerald-200">Add a monthly plan to start tracking your spending pace.</p>}
       </div>
       <ImportCard accounts={accounts.data ?? []} onImported={refresh} />
     </section>
@@ -111,9 +111,9 @@ function MonthPicker({ month, onChange }: { month: string; onChange: (month: str
   }
   const currentMonth = new Date().toISOString().slice(0, 7)
   return <div className="flex items-center gap-1">
-    <button className="bg-slate-100 px-2 text-slate-700 hover:bg-slate-200" aria-label="Previous month" onClick={() => shiftMonth(-1)}><ChevronLeft size={18} /></button>
+    <button className="bg-emerald-900 px-2 text-lime-200 hover:bg-emerald-800" aria-label="Previous month" onClick={() => shiftMonth(-1)}><ChevronLeft size={18} /></button>
     <label className="sr-only" htmlFor="dashboard-month">Month</label><input className="w-36 py-1.5" id="dashboard-month" type="month" max={currentMonth} value={month} onChange={event => onChange(event.target.value)} />
-    <button disabled={month >= currentMonth} className="bg-slate-100 px-2 text-slate-700 hover:bg-slate-200" aria-label="Next month" onClick={() => shiftMonth(1)}><ChevronRight size={18} /></button>
+    <button disabled={month >= currentMonth} className="bg-emerald-900 px-2 text-lime-200 hover:bg-emerald-800" aria-label="Next month" onClick={() => shiftMonth(1)}><ChevronRight size={18} /></button>
   </div>
 }
 
@@ -127,13 +127,13 @@ function PlanRow({ item, month }: { item: CategoryTotal; month: string }) {
   const isMissingFixed = item.isFixed && paymentShouldHavePosted && item.actual < item.planned * 0.95
   const variance = item.actual - item.planned
   const signal = hasOverrun
-    ? { label: `${money(variance)} over plan`, classes: 'bg-red-100 text-red-800', icon: <AlertTriangle size={15} /> }
+    ? { label: `${money(variance)} over plan`, classes: 'bg-red-950 text-red-200', icon: <AlertTriangle size={15} /> }
     : isMissingFixed
-      ? { label: 'Not fully accounted', classes: 'bg-amber-100 text-amber-900', icon: <AlertTriangle size={15} /> }
-      : { label: item.isFixed ? 'Fixed payment on track' : 'Within target', classes: 'bg-emerald-100 text-emerald-800', icon: <CircleCheck size={15} /> }
-  return <tr className={hasOverrun ? 'bg-red-50' : isMissingFixed ? 'bg-amber-50' : ''}>
-    <td><div className="font-medium">{item.name}</div><span className={`text-xs ${item.isFixed ? 'text-violet-700' : 'text-slate-500'}`}>{item.isFixed ? 'Fixed known' : 'Estimated target'}</span></td>
-    <td>{money(item.planned)}</td><td className={hasOverrun ? 'font-semibold text-red-700' : ''}>{money(item.actual)}</td>
+      ? { label: 'Not fully accounted', classes: 'bg-amber-950 text-amber-200', icon: <AlertTriangle size={15} /> }
+      : { label: item.isFixed ? 'Fixed payment on track' : 'Within target', classes: 'bg-lime-950 text-lime-300', icon: <CircleCheck size={15} /> }
+  return <tr className={hasOverrun ? 'bg-red-950/40' : isMissingFixed ? 'bg-amber-950/40' : ''}>
+    <td><div className="font-medium">{item.name}</div><span className={`text-xs ${item.isFixed ? 'text-lime-300' : 'text-emerald-300'}`}>{item.isFixed ? 'Fixed known' : 'Estimated target'}</span></td>
+    <td>{money(item.planned)}</td><td className={hasOverrun ? 'font-semibold text-red-300' : ''}>{money(item.actual)}</td>
     <td><span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${signal.classes}`}>{signal.icon}{signal.label}</span></td>
   </tr>
 }
@@ -150,25 +150,25 @@ function BurnDownChart({ dashboard }: { dashboard: Dashboard }) {
   const plannedPath = points.map(item => point(item.day, totalPlan - item.planned)).join(' ')
   const actualPath = points.map(item => point(item.day, totalPlan - item.actual)).join(' ')
   return <section className="card mt-6">
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h2 className="mb-1 flex items-center gap-2"><BarChart3 className="text-orange-600" size={20} /> Budget burn-down</h2><p className="text-sm text-slate-600">Remaining budget through the month: actual versus planned pace.</p></div><div className="flex gap-3 text-xs font-medium"><span className="text-slate-500">— Planned</span><span className="text-orange-600">— Actual</span></div></div>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><h2 className="mb-1 flex items-center gap-2"><BarChart3 className="text-lime-400" size={20} /> Budget burn-down</h2><p className="text-sm text-emerald-200">Remaining budget through the month: actual versus planned pace.</p></div><div className="flex gap-3 text-xs font-medium"><span className="text-emerald-300">— Planned</span><span className="text-lime-300">— Actual</span></div></div>
     <svg className="h-44 w-full" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Remaining budget actual and planned pace chart">
-      <line x1={padding} y1={padding} x2={width - padding} y2={padding} stroke="#e2e8f0" /><line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#e2e8f0" />
-      <polyline points={plannedPath} fill="none" stroke="#64748b" strokeWidth="3" strokeDasharray="6 5" />
-      <polyline points={actualPath} fill="none" stroke="#ea580c" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <text x={padding} y={height - 2} fill="#64748b" fontSize="11">Day 1</text><text x={width - padding - 38} y={height - 2} fill="#64748b" fontSize="11">Day {maxDay}</text>
+      <line x1={padding} y1={padding} x2={width - padding} y2={padding} stroke="#065f46" /><line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#065f46" />
+      <polyline points={plannedPath} fill="none" stroke="#6ee7b7" strokeWidth="3" strokeDasharray="6 5" />
+      <polyline points={actualPath} fill="none" stroke="#a3e635" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      <text x={padding} y={height - 2} fill="#6ee7b7" fontSize="11">Day 1</text><text x={width - padding - 38} y={height - 2} fill="#6ee7b7" fontSize="11">Day {maxDay}</text>
     </svg>
   </section>
 }
 
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) { return <div className="card"><div className="flex gap-2 text-orange-600">{icon}<span>{label}</span></div><strong className="mt-2 block text-3xl">{value}</strong></div> }
+function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) { return <div className="card"><div className="flex gap-2 text-lime-300">{icon}<span>{label}</span></div><strong className="mt-2 block text-3xl">{value}</strong></div> }
 function ReviewInbox({ accounts, categories, transactions, onChanged }: { accounts: Account[]; categories: Category[]; transactions: ReviewTransaction[]; onChanged: () => Promise<void> }) {
   const [transferId, setTransferId] = useState<string>()
 
   return <section className="card mt-6"><h2>Review inbox</h2>
-    {!transactions.length && <p className="text-slate-600">Everything is categorized or marked as a transfer. Nice work!</p>}
+    {!transactions.length && <p className="text-emerald-200">Everything is categorized or marked as a transfer. Nice work!</p>}
     {transactions.map(transaction => <div className="border-t py-3" key={transaction.id}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span><strong>{transaction.description}</strong><small className="ml-2 text-slate-500">{transaction.transactionDate}</small></span><span>{money(transaction.amount)}</span>
+        <span><strong>{transaction.description}</strong><small className="ml-2 text-emerald-300">{transaction.transactionDate}</small></span><span>{money(transaction.amount)}</span>
         <div className="flex flex-wrap gap-2">
           <select defaultValue={transaction.suggestedCategoryId ?? ''} onChange={async event => {
             if (event.target.value) {
@@ -178,7 +178,7 @@ function ReviewInbox({ accounts, categories, transactions, onChanged }: { accoun
           }}>
             <option value="">Categorize as...</option>{categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
-          <button className="bg-slate-100 text-slate-700 hover:bg-slate-200" type="button" aria-expanded={transferId === transaction.id} onClick={() => setTransferId(current => current === transaction.id ? undefined : transaction.id)}>
+          <button className="bg-emerald-900 text-lime-200 hover:bg-emerald-800" type="button" aria-expanded={transferId === transaction.id} onClick={() => setTransferId(current => current === transaction.id ? undefined : transaction.id)}>
             Mark as transfer
           </button>
         </div>
@@ -211,7 +211,7 @@ function TransferDestinationForm({ accounts, transaction, onSaved }: { accounts:
     }
   }
 
-  return <form className="mt-3 grid gap-2 rounded-md bg-slate-50 p-3 md:grid-cols-3" onSubmit={saveTransfer}>
+  return <form className="mt-3 grid gap-2 rounded-md bg-emerald-900/50 p-3 md:grid-cols-3" onSubmit={saveTransfer}>
     <label className="sr-only" htmlFor={`transfer-destination-${transaction.id}`}>Transfer destination</label>
     <select id={`transfer-destination-${transaction.id}`} value={destination} onChange={event => setDestination(event.target.value)}>
       {destinationAccounts.map(account => <option key={account.id} value={account.id}>{account.name}</option>)}
@@ -219,7 +219,7 @@ function TransferDestinationForm({ accounts, transaction, onSaved }: { accounts:
     </select>
     {isOther && <input required value={destinationName} onChange={event => setDestinationName(event.target.value)} maxLength={200} placeholder="Where did the transfer go?" aria-label="Other transfer destination" />}
     <button type="submit">Save transfer</button>
-    {message && <p className="text-sm text-red-600 md:col-span-3" role="alert">{message}</p>}
+    {message && <p className="text-sm text-red-300 md:col-span-3" role="alert">{message}</p>}
   </form>
 }
 function Transfers({ transactions, onChanged }: { transactions: TransferTransaction[]; onChanged: () => Promise<void> }) {
@@ -237,13 +237,13 @@ function Transfers({ transactions, onChanged }: { transactions: TransferTransact
 
   if (!transactions.length) return null
   return <section className="card mt-6"><h2>Transfers</h2>
-    <p className="mb-2 text-sm text-slate-600">Transfers are excluded from spending and budget totals.</p>
+    <p className="mb-2 text-sm text-emerald-200">Transfers are excluded from spending and budget totals.</p>
     {transactions.map(transaction => <div className="flex flex-wrap items-center justify-between gap-3 border-t py-3" key={transaction.id}>
-      <span><strong>{transaction.description}</strong><small className="ml-2 text-slate-500">{transaction.transactionDate} · To {transaction.destination ?? 'Unknown destination'}</small></span>
+      <span><strong>{transaction.description}</strong><small className="ml-2 text-emerald-300">{transaction.transactionDate} · To {transaction.destination ?? 'Unknown destination'}</small></span>
       <span>{money(transaction.amount)}</span>
-      <button className="bg-slate-100 text-slate-700 hover:bg-slate-200" type="button" onClick={() => unmarkTransfer(transaction)}>Not a transfer</button>
+      <button className="bg-emerald-900 text-lime-200 hover:bg-emerald-800" type="button" onClick={() => unmarkTransfer(transaction)}>Not a transfer</button>
     </div>)}
-    {message && <p className="mt-2 text-sm text-red-600" role="alert">{message}</p>}
+    {message && <p className="mt-2 text-sm text-red-300" role="alert">{message}</p>}
   </section>
 }
 function Manager({ title, placeholder, items, onSubmit }: { title: string; placeholder: string; items: string[]; onSubmit: (name: string) => Promise<void> }) { const [name, setName] = useState(''); return <section className="card"><h2>{title}</h2><form className="flex gap-2" onSubmit={async event => { event.preventDefault(); await onSubmit(name); setName('') }}><input required value={name} onChange={event => setName(event.target.value)} placeholder={placeholder} /><button title={`Add ${title}`}><Plus size={18} /></button></form><ul>{items.map(item => <li className="border-t py-2" key={item}>{item}</li>)}</ul></section> }
@@ -287,22 +287,22 @@ function PlanForm({ categories, entries, onChanged }: { categories: Category[]; 
 
   return <section className="card">
     <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
-      <div><h2 className="mb-1 flex items-center gap-2"><CalendarPlus className="text-orange-600" size={20} /> Monthly plan</h2><p className="text-sm text-slate-600">Mark known bills as fixed; use targets for flexible spending.</p></div>
-      <strong className="rounded-full bg-orange-100 px-3 py-1 text-sm text-orange-800">{entries.length} {entries.length === 1 ? 'item' : 'items'}</strong>
+      <div><h2 className="mb-1 flex items-center gap-2"><CalendarPlus className="text-lime-400" size={20} /> Monthly plan</h2><p className="text-sm text-emerald-200">Mark known bills as fixed; use targets for flexible spending.</p></div>
+      <strong className="rounded-full bg-lime-950 px-3 py-1 text-sm text-lime-300">{entries.length} {entries.length === 1 ? 'item' : 'items'}</strong>
     </div>
-    {!isReady && <p className="mb-4 rounded-md bg-amber-50 p-3 text-sm text-amber-900">{categories.length ? 'Every category already has a monthly plan.' : 'Add a category above before creating a monthly plan.'}</p>}
+    {!isReady && <p className="mb-4 rounded-md bg-amber-950 p-3 text-sm text-amber-200">{categories.length ? 'Every category already has a monthly plan.' : 'Add a category above before creating a monthly plan.'}</p>}
     <form className="grid gap-3 md:grid-cols-3" onSubmit={addPlan}>
       <input disabled={!isReady} required name="amount" type="number" step="0.01" placeholder="Amount" />
       <input disabled={!isReady} required name="day" type="number" min="1" max="31" defaultValue="1" aria-label="Day of month" />
       <select disabled={!isReady} required name="categoryId" defaultValue=""><option value="">Category</option>{availableCategories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
-      <label className="flex items-center gap-2 text-sm font-medium text-slate-700 md:col-span-3"><input disabled={!isReady} className="h-4 w-4" name="isFixed" type="checkbox" /> Fixed known payment <span className="font-normal text-slate-500">(mortgage, insurance, subscriptions)</span></label>
+      <label className="flex items-center gap-2 text-sm font-medium text-lime-100 md:col-span-3"><input disabled={!isReady} className="h-4 w-4" name="isFixed" type="checkbox" /> Fixed known payment <span className="font-normal text-emerald-300">(mortgage, insurance, subscriptions)</span></label>
       <button disabled={!isReady} className="md:col-span-3" type="submit">Add monthly plan</button>
     </form>
     {message && <p className="mt-3 text-sm" role="status">{message}</p>}
     <div className="mt-6 overflow-x-auto">
-      {!entries.length ? <p className="text-sm text-slate-600">No monthly plans yet. Add your first expected category amount above.</p> :
+      {!entries.length ? <p className="text-sm text-emerald-200">No monthly plans yet. Add your first expected category amount above.</p> :
         <table><thead><tr><th>Category</th><th>Amount</th><th>Type</th><th>Due day</th><th><span className="sr-only">Actions</span></th></tr></thead>
-          <tbody>{entries.map(entry => { const categoryName = categoryNames.get(entry.categoryId) ?? 'Unknown category'; return <tr key={entry.id}><td className="font-medium">{categoryName}</td><td>{money(entry.amount)}</td><td><span className={`rounded-full px-2 py-1 text-xs font-medium ${entry.isFixed ? 'bg-violet-100 text-violet-800' : 'bg-slate-100 text-slate-700'}`}>{entry.isFixed ? 'Fixed known' : 'Target'}</span></td><td>{entry.dayOfMonth}</td><td className="text-right"><button className="bg-transparent px-2 text-red-600 hover:bg-red-50" title={`Remove ${categoryName}`} aria-label={`Remove ${categoryName}`} onClick={() => removePlan(entry)}><Trash2 size={18} /></button></td></tr> })}</tbody>
+          <tbody>{entries.map(entry => { const categoryName = categoryNames.get(entry.categoryId) ?? 'Unknown category'; return <tr key={entry.id}><td className="font-medium">{categoryName}</td><td>{money(entry.amount)}</td><td><span className={`rounded-full px-2 py-1 text-xs font-medium ${entry.isFixed ? 'bg-lime-950 text-lime-300' : 'bg-emerald-900 text-emerald-200'}`}>{entry.isFixed ? 'Fixed known' : 'Target'}</span></td><td>{entry.dayOfMonth}</td><td className="text-right"><button className="bg-transparent px-2 text-red-300 hover:bg-red-950/60" title={`Remove ${categoryName}`} aria-label={`Remove ${categoryName}`} onClick={() => removePlan(entry)}><Trash2 size={18} /></button></td></tr> })}</tbody>
         </table>}
     </div>
   </section>
@@ -347,7 +347,7 @@ function ImportCard({ accounts, onImported }: { accounts: Account[]; onImported:
 
   return <section className="card">
     <h2 className="flex gap-2"><FileUp /> Import Wells Fargo CSV</h2>
-    <p className="mb-3 text-sm text-slate-600">Conflicting transactions are held for description review before anything is imported.</p>
+    <p className="mb-3 text-sm text-emerald-200">Conflicting transactions are held for description review before anything is imported.</p>
     <form onSubmit={submitImport} className="space-y-3">
       <select required value={accountId} disabled={conflicts.length > 0} onChange={event => setAccountId(event.target.value)}>
         <option value="">Choose account</option>{accounts.map(account => <option key={account.id} value={account.id}>{account.name}</option>)}
@@ -355,15 +355,15 @@ function ImportCard({ accounts, onImported }: { accounts: Account[]; onImported:
       <input required type="file" accept=".csv,text/csv" disabled={conflicts.length > 0} onChange={event => {
         setFile(event.target.files?.[0]); setConflicts([]); setDescriptions({}); setMessage('')
       }} />
-      {!!conflicts.length && <div className="space-y-3 rounded-md bg-amber-50 p-3">
-        <p className="text-sm font-medium text-amber-900">Matching transactions need a distinct description.</p>
-        {conflicts.map(conflict => <div className="space-y-1 border-t border-amber-200 pt-3 first:border-t-0 first:pt-0" key={conflict.index}>
-          <p className="text-sm text-slate-700">{conflict.transactionDate} · {money(conflict.amount)} · {conflict.reason}</p>
-          <label className="text-sm font-medium text-slate-700" htmlFor={`description-${conflict.index}`}>Description</label>
+      {!!conflicts.length && <div className="space-y-3 rounded-md bg-amber-950 p-3">
+        <p className="text-sm font-medium text-amber-200">Matching transactions need a distinct description.</p>
+        {conflicts.map(conflict => <div className="space-y-1 border-t border-amber-800 pt-3 first:border-t-0 first:pt-0" key={conflict.index}>
+          <p className="text-sm text-emerald-100">{conflict.transactionDate} · {money(conflict.amount)} · {conflict.reason}</p>
+          <label className="text-sm font-medium text-lime-100" htmlFor={`description-${conflict.index}`}>Description</label>
           <input id={`description-${conflict.index}`} required value={descriptions[conflict.index] ?? conflict.description} onChange={event => setDescriptions(current => ({ ...current, [conflict.index]: event.target.value }))} />
         </div>)}
       </div>}
-      {!!conflicts.length && <button className="w-full bg-slate-100 text-slate-700 hover:bg-slate-200" type="button" onClick={() => { setConflicts([]); setDescriptions({}); setMessage('Conflict review cancelled. Choose a file to start again.') }}>Cancel conflict review</button>}
+      {!!conflicts.length && <button className="w-full bg-emerald-900 text-lime-200 hover:bg-emerald-800" type="button" onClick={() => { setConflicts([]); setDescriptions({}); setMessage('Conflict review cancelled. Choose a file to start again.') }}>Cancel conflict review</button>}
       <button className="w-full" disabled={conflicts.length > 0 && !canContinue} type="submit">{conflicts.length ? 'Continue import' : 'Import for review'}</button>
       {message && <p className="text-sm" role="status">{message}</p>}
     </form>
