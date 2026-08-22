@@ -40,9 +40,34 @@ public sealed class Category
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid HouseholdId { get; set; }
+    public Guid ExpenseTypeId { get; set; }
     public required string Name { get; set; }
     public string? Color { get; set; }
     public bool IsArchived { get; set; }
+}
+
+public sealed class ExpenseType
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid HouseholdId { get; set; }
+    public required string Name { get; set; }
+}
+
+public static class ExpenseTypeDefaults
+{
+    public const string Uncategorized = "Uncategorized";
+
+    public static readonly string[] Names =
+    [
+        "Mortgage",
+        "Groceries",
+        "Restaurants",
+        "Utilities",
+        "Entertainment",
+        "Insurance",
+        "Phone",
+        Uncategorized
+    ];
 }
 
 public sealed class PlannedEntry
@@ -53,7 +78,7 @@ public sealed class PlannedEntry
     public Guid CategoryId { get; set; }
     public required string Name { get; set; }
     public decimal Amount { get; set; }
-    public int DayOfMonth { get; set; } = 1;
+    public DateOnly PlanMonth { get; set; }
     public bool IsFixed { get; set; }
     public bool IsActive { get; set; } = true;
 }

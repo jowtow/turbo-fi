@@ -110,14 +110,23 @@ public sealed class TransactionsController(TurboFiDbContext db) : ControllerBase
         var transactions = await db.FinancialTransactions.Where(transaction =>
                 transaction.HouseholdId == HouseholdId && !transaction.IsTransfer && transaction.CategoryId == null)
             .OrderByDescending(transaction => transaction.TransactionDate).ToListAsync();
-        var categoryByDescription = await db.FinancialTransactions.Where(transaction =>
+        var categorizedTransactions = await db.FinancialTransactions.Where(transaction =>
                 transaction.HouseholdId == HouseholdId && !transaction.IsTransfer && transaction.CategoryId != null)
-            .GroupBy(transaction => transaction.Description).Select(group => new { Description = group.Key, CategoryId = group.OrderByDescending(transaction => transaction.ReviewedAt).First().CategoryId })
-            .ToDictionaryAsync(item => item.Description, item => item.CategoryId);
+            .Select(transaction => new { transaction.Description, transaction.CategoryId, transaction.ReviewedAt })
+            .ToListAsync();
+        var categoryByPrefix = categorizedTransactions
+            .GroupBy(transaction => NormalizeDescription(transaction.Description))
+            .Where(group => group.Key.Length > 0)
+            .ToDictionary(
+                group => group.Key,
+                group => group.GroupBy(transaction => transaction.CategoryId!.Value)
+                    .OrderByDescending(category => category.Count())
+                    .ThenByDescending(category => category.Max(transaction => transaction.ReviewedAt))
+                    .First().Key);
         return Ok(transactions.Select(transaction => new
         {
             transaction.Id, transaction.FinancialAccountId, transaction.TransactionDate, transaction.Description, transaction.Amount, transaction.Status,
-            suggestedCategoryId = categoryByDescription.GetValueOrDefault(transaction.Description)
+            suggestedCategoryId = categoryByPrefix.GetValueOrDefault(NormalizeDescription(transaction.Description))
         }));
     }
 
@@ -127,7 +136,9 @@ public sealed class TransactionsController(TurboFiDbContext db) : ControllerBase
         var transaction = await db.FinancialTransactions.SingleOrDefaultAsync(item => item.Id == id && item.HouseholdId == HouseholdId);
         if (transaction is null) return NotFound();
         if (transaction.IsTransfer) return BadRequest("Transfers cannot be categorized. Mark it as not a transfer first.");
-        if (!await db.Categories.AnyAsync(category => category.Id == request.CategoryId && category.HouseholdId == HouseholdId)) return BadRequest("Unknown category.");
+        if (!await db.Categories.AnyAsync(category =>
+                category.Id == request.CategoryId && category.HouseholdId == HouseholdId && !category.IsArchived))
+            return BadRequest("Unknown or archived category.");
         transaction.CategoryId = request.CategoryId;
         transaction.ReviewedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync();
@@ -216,6 +227,12 @@ public sealed class TransactionsController(TurboFiDbContext db) : ControllerBase
         var text = string.Join('|', accountId, date, description.Trim().ToUpperInvariant(), amount, checkNumber.Trim(), status.Trim());
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
     }
+
+    private static string NormalizeDescription(string description) => new(description
+        .Where(char.IsLetterOrDigit)
+        .Select(char.ToUpperInvariant)
+        .Take(8)
+        .ToArray());
 
     private sealed record ImportedRow(
         int Index,

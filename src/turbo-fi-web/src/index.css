@@ -1,12 +1,22 @@
 @import "tailwindcss";
 
 @layer base {
-  body { @apply min-h-screen bg-zinc-950 text-lime-50; }
-  h2 { @apply mb-4 text-lg font-semibold; }
-  input, select { @apply w-full rounded-md border border-emerald-700 bg-emerald-950 px-3 py-2 text-lime-50 outline-none transition focus:border-lime-400 focus:ring-2 focus:ring-lime-400/30; }
-  button { @apply rounded-md bg-lime-400 px-3 py-2 font-medium text-zinc-950 transition hover:bg-lime-300 disabled:opacity-50; }
+  body { @apply min-h-screen bg-[#09110f] text-lime-50 antialiased; }
+  h2 { @apply mb-4 text-lg font-semibold tracking-tight; }
+  input, select { @apply w-full rounded-lg border border-emerald-800 bg-[#0b1b16] px-3 py-2.5 text-lime-50 outline-none transition focus:border-lime-400 focus:ring-2 focus:ring-lime-400/30; }
+  button { @apply rounded-lg bg-lime-400 px-3.5 py-2.5 font-medium text-zinc-950 transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50; }
   table { @apply w-full text-left; }
-  th { @apply border-b border-emerald-900 pb-2 text-sm text-emerald-300; }
-  td { @apply border-b border-emerald-900 py-2; }
+  th { @apply border-b border-emerald-800/80 px-3 pb-3 text-xs font-semibold uppercase tracking-wider text-emerald-300; }
+  td { @apply border-b border-emerald-900/80 px-3 py-4; }
 }
-@layer components { .card { @apply rounded-xl border border-emerald-800 bg-emerald-950/60 p-5 shadow-lg shadow-lime-950/20; } }
+
+@layer components {
+  .app-shell { @apply flex min-h-screen min-w-[960px] bg-[#09110f]; }
+  .app-sidebar { @apply sticky top-0 flex h-screen w-72 shrink-0 flex-col border-r border-emerald-800/80 bg-[#0b1713] px-5 py-7; }
+  .app-sidebar nav button { @apply flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left; }
+  .app-content { @apply min-w-0 flex-1 px-10 py-10 2xl:px-14 2xl:py-12; }
+  .workspace { @apply w-full; }
+  .workspace-heading { @apply mb-10 flex flex-wrap items-end justify-between gap-6 border-b border-emerald-800/70 pb-8; }
+  .workspace-heading h1 { @apply text-4xl font-bold tracking-tight sm:text-5xl; }
+  .card { @apply rounded-2xl border border-emerald-800/80 bg-[#0d1d18] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.18)] xl:p-7; }
+}

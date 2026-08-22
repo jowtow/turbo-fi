@@ -26,6 +26,11 @@ public sealed class AuthController(
         if (!result.Succeeded) return ValidationProblem(new ValidationProblemDetails(result.Errors.ToDictionary(error => error.Code, error => new[] { error.Description })));
 
         household.OwnerUserId = user.Id;
+        db.ExpenseTypes.AddRange(ExpenseTypeDefaults.Names.Select(name => new ExpenseType
+        {
+            HouseholdId = household.Id,
+            Name = name
+        }));
         await db.SaveChangesAsync();
         await signInManager.SignInAsync(user, isPersistent: false);
         return Created("", new { user.Email, household.Name });
