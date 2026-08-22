@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { BarChart3, CalendarDays, Cat, ListChecks, LogOut } from 'lucide-react'
+import { BarChart3, CalendarDays, Cat, ListChecks, LogOut, Settings2 } from 'lucide-react'
 import type { Workspace } from '../../types/finance'
 
 type SidebarProps = {
@@ -15,6 +15,7 @@ export function Sidebar({ workspace, householdName, reviewCount, onSelect, onSig
     { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={19} /> },
     { id: 'categorize', label: 'Categorize', icon: <ListChecks size={19} /> },
     { id: 'plan', label: 'Monthly plan', icon: <CalendarDays size={19} /> },
+    { id: 'settings', label: 'Settings', icon: <Settings2 size={19} /> },
   ]
 
   return <aside className="app-sidebar">

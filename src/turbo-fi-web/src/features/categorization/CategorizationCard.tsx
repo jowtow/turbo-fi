@@ -5,6 +5,7 @@ import { money } from "../../lib/format";
 import type {
   Account,
   Category,
+  CategoryPhraseRule,
   ExpenseType,
   ReviewTransaction,
 } from "../../types/finance";
@@ -13,6 +14,7 @@ type CategorizationCardProps = {
   accounts: Account[];
   expenseTypes: ExpenseType[];
   categories: Category[];
+  phraseRules: CategoryPhraseRule[];
   transactions: ReviewTransaction[];
   onChanged: () => Promise<void>;
 };
@@ -21,16 +23,23 @@ export function CategorizationCard({
   accounts,
   expenseTypes,
   categories,
+  phraseRules,
   transactions,
   onChanged,
 }: CategorizationCardProps) {
   const transaction = transactions[0];
   const [categoryId, setCategoryId] = useState("");
   const [message, setMessage] = useState("");
+  const [savingRule, setSavingRule] = useState(false);
+  const [rulePhrase, setRulePhrase] = useState("");
+  const [ruleMessage, setRuleMessage] = useState("");
 
   useEffect(() => {
     setCategoryId(transaction?.suggestedCategoryId ?? "");
     setMessage("");
+    setSavingRule(false);
+    setRulePhrase("");
+    setRuleMessage("");
   }, [transaction?.id, transaction?.suggestedCategoryId]);
 
   async function categorize(event: FormEvent<HTMLFormElement>) {
@@ -75,6 +84,22 @@ export function CategorizationCard({
     }
   }
 
+  async function savePhraseRule(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!rulePhrase.trim() || !categoryId) return;
+    setRuleMessage("");
+    try {
+      await api.post("/phrase-rules", { phrase: rulePhrase.trim(), categoryId });
+      setSavingRule(false);
+      setRulePhrase("");
+      await onChanged();
+    } catch (reason) {
+      setRuleMessage(
+        reason instanceof Error ? reason.message : "Unable to save phrase rule.",
+      );
+    }
+  }
+
   if (!transaction)
     return (
       <section className="card flex min-h-80 flex-col items-center justify-center text-center">
@@ -85,11 +110,18 @@ export function CategorizationCard({
         </p>
       </section>
     );
+
   const suggested = transaction.suggestedCategoryId
     ? categories.find(
         (category) => category.id === transaction.suggestedCategoryId,
       )?.name
     : undefined;
+
+  const alreadyHasRule = rulePhrase.trim()
+    ? phraseRules.some(
+        (r) => r.phrase.toLowerCase() === rulePhrase.trim().toLowerCase(),
+      )
+    : false;
 
   return (
     <section className="card min-h-80">
@@ -149,7 +181,11 @@ export function CategorizationCard({
           </select>
           {suggested && (
             <p className="mt-2 text-sm text-lime-300">
-              Suggested from similar previous transactions: {suggested}
+              {transaction.suggestionSource === "phraseRule" ? (
+                <>Matched phrase rule: <strong>{transaction.matchedPhrase}</strong></>
+              ) : (
+                <>Suggested from similar previous transactions: {suggested}</>
+              )}
             </p>
           )}
         </div>
@@ -158,6 +194,53 @@ export function CategorizationCard({
           Confirm & next
         </button>
       </form>
+      {categoryId && !savingRule && (
+        <button
+          className="mt-3 bg-transparent text-xs text-emerald-400 hover:bg-emerald-900"
+          type="button"
+          onClick={() => {
+            setSavingRule(true);
+            setRulePhrase(transaction.matchedPhrase ?? "");
+            setRuleMessage("");
+          }}
+        >
+          + Save as phrase rule
+        </button>
+      )}
+      {savingRule && (
+        <form className="mt-3 flex flex-wrap items-end gap-2" onSubmit={savePhraseRule}>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-emerald-300" htmlFor="rule-phrase">
+              Phrase (appears anywhere in description)
+            </label>
+            <input
+              id="rule-phrase"
+              className="text-sm"
+              value={rulePhrase}
+              onChange={(e) => setRulePhrase(e.target.value)}
+              placeholder="e.g. NETFLIX"
+              maxLength={200}
+              required
+            />
+          </div>
+          <button className="text-sm" type="submit" disabled={!rulePhrase.trim() || alreadyHasRule}>
+            Save rule
+          </button>
+          <button
+            className="bg-transparent text-sm text-emerald-300 hover:bg-emerald-900"
+            type="button"
+            onClick={() => { setSavingRule(false); setRuleMessage(""); }}
+          >
+            Cancel
+          </button>
+          {alreadyHasRule && (
+            <p className="w-full text-xs text-amber-300">A rule for this phrase already exists.</p>
+          )}
+          {ruleMessage && (
+            <p className="w-full text-xs text-red-300" role="alert">{ruleMessage}</p>
+          )}
+        </form>
+      )}
       <button
         className="mt-4 bg-transparent text-emerald-200 hover:bg-emerald-900"
         type="button"

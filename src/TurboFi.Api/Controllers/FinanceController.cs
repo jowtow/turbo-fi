@@ -330,6 +330,43 @@ public sealed class FinanceController(TurboFiDbContext db) : ControllerBase
         return Ok(points);
     }
 
+    [HttpGet("phrase-rules")]
+    public async Task<ActionResult> PhraseRules()
+    {
+        var rules = await db.CategoryPhraseRules
+            .Where(rule => rule.HouseholdId == HouseholdId)
+            .OrderBy(rule => rule.Phrase)
+            .Select(rule => new { rule.Id, rule.Phrase, rule.CategoryId })
+            .ToListAsync();
+        return Ok(rules);
+    }
+
+    [HttpPost("phrase-rules")]
+    public async Task<ActionResult> CreatePhraseRule(PhraseRuleRequest request)
+    {
+        var phrase = request.Phrase.Trim();
+        if (string.IsNullOrWhiteSpace(phrase)) return BadRequest("Phrase is required.");
+        if (phrase.Length > 200) return BadRequest("Phrase cannot exceed 200 characters.");
+        if (!await db.Categories.AnyAsync(category => category.Id == request.CategoryId && category.HouseholdId == HouseholdId && !category.IsArchived))
+            return BadRequest("Unknown or archived category.");
+        if (await db.CategoryPhraseRules.AnyAsync(rule => rule.HouseholdId == HouseholdId && rule.Phrase == phrase))
+            return Conflict("A phrase rule for that phrase already exists.");
+        var rule = new CategoryPhraseRule { HouseholdId = HouseholdId, Phrase = phrase, CategoryId = request.CategoryId };
+        db.CategoryPhraseRules.Add(rule);
+        await db.SaveChangesAsync();
+        return Created($"api/phrase-rules/{rule.Id}", new { rule.Id, rule.Phrase, rule.CategoryId });
+    }
+
+    [HttpDelete("phrase-rules/{id:guid}")]
+    public async Task<ActionResult> DeletePhraseRule(Guid id)
+    {
+        var rule = await db.CategoryPhraseRules.SingleOrDefaultAsync(r => r.Id == id && r.HouseholdId == HouseholdId);
+        if (rule is null) return NotFound();
+        db.CategoryPhraseRules.Remove(rule);
+        await db.SaveChangesAsync();
+        return NoContent();
+    }
+
     private static PlannedEntryResponse ToResponse(PlannedEntry entry) =>
         new(entry.Id, entry.CategoryId, entry.Amount, entry.IsFixed);
 
@@ -348,3 +385,4 @@ public sealed record CategoryRequest(string Name, Guid ExpenseTypeId, string? Co
 public sealed record PlannedEntryRequest(Guid CategoryId, decimal Amount, int Year, int Month, bool IsFixed = false);
 public sealed record PlannedEntryUpdateRequest(decimal Amount, bool IsFixed);
 public sealed record PlannedEntryResponse(Guid Id, Guid CategoryId, decimal Amount, bool IsFixed);
+public sealed record PhraseRuleRequest(string Phrase, Guid CategoryId);

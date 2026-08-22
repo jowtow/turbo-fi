@@ -123,10 +123,36 @@ public sealed class TransactionsController(TurboFiDbContext db) : ControllerBase
                     .OrderByDescending(category => category.Count())
                     .ThenByDescending(category => category.Max(transaction => transaction.ReviewedAt))
                     .First().Key);
-        return Ok(transactions.Select(transaction => new
+        var phraseRules = await db.CategoryPhraseRules
+            .Where(rule => rule.HouseholdId == HouseholdId)
+            .Select(rule => new { rule.Phrase, rule.CategoryId })
+            .ToListAsync();
+        return Ok(transactions.Select(transaction =>
         {
-            transaction.Id, transaction.FinancialAccountId, transaction.TransactionDate, transaction.Description, transaction.Amount, transaction.Status,
-            suggestedCategoryId = categoryByPrefix.GetValueOrDefault(NormalizeDescription(transaction.Description))
+            var phraseMatch = phraseRules.FirstOrDefault(rule =>
+                transaction.Description.Contains(rule.Phrase, StringComparison.OrdinalIgnoreCase));
+            Guid? suggestedCategoryId;
+            string? suggestionSource;
+            string? matchedPhrase;
+            if (phraseMatch is not null)
+            {
+                suggestedCategoryId = phraseMatch.CategoryId;
+                suggestionSource = "phraseRule";
+                matchedPhrase = phraseMatch.Phrase;
+            }
+            else
+            {
+                var prefixKey = NormalizeDescription(transaction.Description);
+                suggestedCategoryId = categoryByPrefix.GetValueOrDefault(prefixKey);
+                suggestionSource = suggestedCategoryId.HasValue ? "prefix" : null;
+                matchedPhrase = null;
+            }
+            return new
+            {
+                transaction.Id, transaction.FinancialAccountId, transaction.TransactionDate,
+                transaction.Description, transaction.Amount, transaction.Status,
+                suggestedCategoryId, suggestionSource, matchedPhrase
+            };
         }));
     }
 

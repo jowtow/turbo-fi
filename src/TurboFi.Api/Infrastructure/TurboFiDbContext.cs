@@ -14,6 +14,7 @@ public sealed class TurboFiDbContext(DbContextOptions<TurboFiDbContext> options)
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<PlannedEntry> PlannedEntries => Set<PlannedEntry>();
     public DbSet<FinancialTransaction> FinancialTransactions => Set<FinancialTransaction>();
+    public DbSet<CategoryPhraseRule> CategoryPhraseRules => Set<CategoryPhraseRule>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -32,6 +33,10 @@ public sealed class TurboFiDbContext(DbContextOptions<TurboFiDbContext> options)
         }).IsUnique();
         builder.Entity<FinancialTransaction>().Property(transaction => transaction.Amount).HasPrecision(18, 2);
         builder.Entity<FinancialTransaction>().Property(transaction => transaction.TransferDestinationName).HasMaxLength(200);
+        builder.Entity<CategoryPhraseRule>().Property(rule => rule.Phrase).HasMaxLength(200);
+        builder.Entity<CategoryPhraseRule>().HasIndex(rule => new { rule.HouseholdId, rule.Phrase }).IsUnique();
+        builder.Entity<CategoryPhraseRule>().HasOne<Category>().WithMany().HasForeignKey(rule => rule.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.Entity<PlannedEntry>().Property(entry => entry.Amount).HasPrecision(18, 2);
         builder.Entity<PlannedEntry>().HasIndex(entry => new { entry.HouseholdId, entry.CategoryId, entry.PlanMonth }).IsUnique();
         builder.Entity<PlannedEntry>().Property(entry => entry.IsFixed).HasDefaultValue(false);

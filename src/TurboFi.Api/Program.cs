@@ -150,6 +150,21 @@ using (var scope = app.Services.CreateScope())
             ALTER TABLE dbo.FinancialTransactions ADD TransferDestinationName nvarchar(200) NULL;
         END
         """);
+    await db.Database.ExecuteSqlRawAsync("""
+        IF OBJECT_ID('dbo.CategoryPhraseRules', 'U') IS NULL
+        BEGIN
+            CREATE TABLE dbo.CategoryPhraseRules (
+                Id uniqueidentifier NOT NULL PRIMARY KEY,
+                HouseholdId uniqueidentifier NOT NULL,
+                Phrase nvarchar(200) NOT NULL,
+                CategoryId uniqueidentifier NOT NULL,
+                CONSTRAINT FK_CategoryPhraseRules_Categories_CategoryId
+                    FOREIGN KEY (CategoryId) REFERENCES dbo.Categories (Id)
+            );
+            CREATE UNIQUE INDEX IX_CategoryPhraseRules_HouseholdId_Phrase
+                ON dbo.CategoryPhraseRules (HouseholdId, Phrase);
+        END
+        """);
 }
 
 app.Run();

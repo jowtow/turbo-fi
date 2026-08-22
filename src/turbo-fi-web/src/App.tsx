@@ -6,6 +6,7 @@ import { DashboardWorkspace } from './features/dashboard/DashboardWorkspace'
 import { useDashboard } from './features/dashboard/useDashboard'
 import { Sidebar } from './features/layout/Sidebar'
 import { PlanWorkspace } from './features/planning/PlanWorkspace'
+import { SettingsWorkspace } from './features/settings/SettingsWorkspace'
 import { api } from './lib/api'
 import type { Workspace } from './types/finance'
 
@@ -44,6 +45,7 @@ function App() {
       {workspace === 'dashboard' && <DashboardWorkspace month={selectedMonth} onMonthChange={setSelectedMonth} onCategorize={() => setWorkspace('categorize')} />}
       {workspace === 'categorize' && <CategorizeWorkspace />}
       {workspace === 'plan' && <PlanWorkspace month={selectedMonth} onMonthChange={setSelectedMonth} />}
+      {workspace === 'settings' && <SettingsWorkspace />}
     </div>
   </main>
 }
