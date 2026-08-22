@@ -75,23 +75,30 @@ public sealed class TransactionsController(TurboFiDbContext db) : ControllerBase
             .Where(group => group.Count() > 1)
             .Select(group => group.Key)
             .ToHashSet();
-        var conflicts = importedRows
-            .Where(row => existingFingerprints.Contains(row.Fingerprint) || repeatedFingerprints.Contains(row.Fingerprint))
+
+        // Intra-file duplicates still require user resolution via descriptionOverrides.
+        var intraFileConflicts = importedRows
+            .Where(row => repeatedFingerprints.Contains(row.Fingerprint))
             .Select(row => new
             {
                 row.Index,
                 row.Description,
                 row.TransactionDate,
                 row.Amount,
-                reason = existingFingerprints.Contains(row.Fingerprint)
-                    ? "Matches a transaction already imported for this account."
-                    : "Matches another transaction in this CSV file."
+                reason = "Matches another transaction in this CSV file."
             });
 
-        if (conflicts.Any())
-            return Conflict(new { conflicts });
+        if (intraFileConflicts.Any())
+            return Conflict(new { conflicts = intraFileConflicts });
 
-        foreach (var row in importedRows)
+        // Rows already in the DB are silently skipped.
+        var skipped = importedRows
+            .Where(row => existingFingerprints.Contains(row.Fingerprint))
+            .Select(row => new { row.Index, row.Description, row.TransactionDate, row.Amount })
+            .ToList();
+        var rowsToImport = importedRows.Where(row => !existingFingerprints.Contains(row.Fingerprint)).ToList();
+
+        foreach (var row in rowsToImport)
         {
             db.FinancialTransactions.Add(new FinancialTransaction
             {
@@ -101,7 +108,7 @@ public sealed class TransactionsController(TurboFiDbContext db) : ControllerBase
             });
         }
         await db.SaveChangesAsync();
-        return Ok(new { imported = importedRows.Count });
+        return Ok(new { imported = rowsToImport.Count, skipped });
     }
 
     [HttpGet("transactions/review")]
