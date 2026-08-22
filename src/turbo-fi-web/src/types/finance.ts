@@ -10,4 +10,5 @@ export type PlannedEntry = { id: string; amount: number; categoryId: string; isF
 export type ReviewTransaction = { id: string; financialAccountId: string; transactionDate: string; description: string; amount: number; suggestedCategoryId?: string }
 export type ImportConflict = { index: number; description: string; transactionDate: string; amount: number; reason: string }
 export type ImportResult = { imported?: number; conflicts?: ImportConflict[] }
+export type BurndownPoint = { day: number; planned: number; actual: number | null }
 

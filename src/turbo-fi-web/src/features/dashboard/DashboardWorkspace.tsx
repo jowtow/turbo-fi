@@ -13,6 +13,7 @@ import { PageHeading } from "../../components/PageHeading";
 import { SortableHeader, type SortDirection, TableControls } from "../../components/TableControls";
 import { money, monthLabel } from "../../lib/format";
 import type { CategoryTotal, ExpenseTypeTotal } from "../../types/finance";
+import { BurndownChart } from "./BurndownChart";
 import { useDashboard } from "./useDashboard";
 
 type DashboardWorkspaceProps = {
@@ -143,6 +144,7 @@ export function DashboardWorkspace({
           }
         />
       </section>
+      <BurndownChart month={month} expenseTypes={expenseTypes} />
       <section className="card">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>

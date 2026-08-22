@@ -280,6 +280,56 @@ public sealed class FinanceController(TurboFiDbContext db) : ControllerBase
         return Ok(new { month = start.ToString("yyyy-MM"), reviewCount, expenseTypes = expenseTypeTotals });
     }
 
+    [HttpGet("dashboard/burndown")]
+    public async Task<ActionResult> Burndown([FromQuery] int? year, [FromQuery] int? month,
+        [FromQuery] Guid? expenseTypeId, [FromQuery] Guid? categoryId)
+    {
+        var now = DateOnly.FromDateTime(DateTime.UtcNow);
+        var start = new DateOnly(year ?? now.Year, month ?? now.Month, 1);
+        var end = start.AddMonths(1);
+        var daysInMonth = DateTime.DaysInMonth(start.Year, start.Month);
+
+        var plannedQuery = db.PlannedEntries.Where(e => e.HouseholdId == HouseholdId && e.PlanMonth == start && e.IsActive);
+        if (categoryId.HasValue)
+            plannedQuery = plannedQuery.Where(e => e.CategoryId == categoryId.Value);
+        else if (expenseTypeId.HasValue)
+        {
+            var categoryIds = await db.Categories
+                .Where(c => c.HouseholdId == HouseholdId && c.ExpenseTypeId == expenseTypeId.Value)
+                .Select(c => c.Id).ToListAsync();
+            plannedQuery = plannedQuery.Where(e => categoryIds.Contains(e.CategoryId));
+        }
+        var totalPlanned = await plannedQuery.SumAsync(e => (decimal?)Math.Abs(e.Amount)) ?? 0m;
+
+        var txQuery = db.FinancialTransactions.Where(t =>
+            t.HouseholdId == HouseholdId && !t.IsTransfer && t.CategoryId != null &&
+            t.Amount < 0 && t.TransactionDate >= start && t.TransactionDate < end);
+        if (categoryId.HasValue)
+            txQuery = txQuery.Where(t => t.CategoryId == categoryId.Value);
+        else if (expenseTypeId.HasValue)
+        {
+            var categoryIds = await db.Categories
+                .Where(c => c.HouseholdId == HouseholdId && c.ExpenseTypeId == expenseTypeId.Value)
+                .Select(c => c.Id).ToListAsync();
+            txQuery = txQuery.Where(t => t.CategoryId.HasValue && categoryIds.Contains(t.CategoryId.Value));
+        }
+        var dailyActuals = await txQuery
+            .GroupBy(t => t.TransactionDate.Day)
+            .Select(g => new { Day = g.Key, Amount = g.Sum(t => -t.Amount) })
+            .ToListAsync();
+        var actualByDay = dailyActuals.ToDictionary(d => d.Day, d => d.Amount);
+
+        var cutoffDay = start.Year == now.Year && start.Month == now.Month ? now.Day : daysInMonth;
+        var cumulativeActual = 0m;
+        var points = Enumerable.Range(1, daysInMonth).Select(day =>
+        {
+            if (actualByDay.TryGetValue(day, out var dayAmount)) cumulativeActual += dayAmount;
+            var planned = Math.Round(totalPlanned / daysInMonth * day, 2);
+            return new { day, planned, actual = day <= cutoffDay ? (decimal?)Math.Round(cumulativeActual, 2) : null };
+        });
+        return Ok(points);
+    }
+
     private static PlannedEntryResponse ToResponse(PlannedEntry entry) =>
         new(entry.Id, entry.CategoryId, entry.Amount, entry.IsFixed);
 

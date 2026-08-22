@@ -1,5 +1,6 @@
 import type {
   Account,
+  BurndownPoint,
   Category,
   Dashboard,
   ExpenseType,
@@ -27,6 +28,7 @@ export type GetPath =
   | '/categories'
   | '/transactions/review'
   | `/dashboard?${string}`
+  | `/dashboard/burndown?${string}`
   | `/planned-entries?${string}`
 
 export type PostPath =
@@ -59,7 +61,8 @@ export type GetResponse<Path extends GetPath> =
         : Path extends '/categories' ? Category[]
           : Path extends '/transactions/review' ? ReviewTransaction[]
             : Path extends `/dashboard?${string}` ? Dashboard
-              : Path extends `/planned-entries?${string}` ? PlannedEntry[]
+              : Path extends `/dashboard/burndown?${string}` ? BurndownPoint[]
+                : Path extends `/planned-entries?${string}` ? PlannedEntry[]
                 : never
 
 export type PostBody<Path extends PostPath> =
