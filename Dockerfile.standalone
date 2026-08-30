@@ -14,7 +14,11 @@ RUN dotnet restore "src/TurboFi.Api/TurboFi.Api.csproj"
 COPY . .
 RUN dotnet publish "src/TurboFi.Api/TurboFi.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# ── Stage 3: Runtime image — SQL Server + ASP.NET runtime + nginx ─────────────
+# ── Stage 3: .NET ASP.NET Core runtime (copied from the official image) ───────
+# Avoids apt package availability issues; the runtime files are self-contained.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS dotnet-runtime
+
+# ── Stage 4: Runtime image — SQL Server + .NET runtime + nginx ────────────────
 # NOTE: SQL Server on Linux requires x86_64 / arm64 (amd64 is the most tested).
 FROM ubuntu:22.04
 
@@ -40,14 +44,23 @@ RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
         https://packages.microsoft.com/ubuntu/22.04/prod jammy main" \
         > /etc/apt/sources.list.d/microsoft-prod.list
 
-# Install SQL Server, mssql-tools, and ASP.NET runtime in one layer to keep image smaller
+# Install SQL Server and mssql-tools; also pull in .NET runtime's system-lib deps
 RUN apt-get update \
     && apt-get install -y --no-install-recommends mssql-server \
     && ACCEPT_EULA=Y apt-get install -y --no-install-recommends \
         mssql-tools18 \
         unixodbc-dev \
-    && apt-get install -y --no-install-recommends aspnetcore-runtime-10.0 \
+    && apt-get install -y --no-install-recommends \
+        libicu70 \
+        libssl3 \
+        libgcc-s1 \
+        libstdc++6 \
+        zlib1g \
     && rm -rf /var/lib/apt/lists/*
+
+# Copy the .NET ASP.NET Core runtime directly from the official image
+COPY --from=dotnet-runtime /usr/share/dotnet /usr/share/dotnet
+RUN ln -s /usr/share/dotnet/dotnet /usr/local/bin/dotnet
 
 ENV PATH="$PATH:/opt/mssql-tools18/bin"
 
