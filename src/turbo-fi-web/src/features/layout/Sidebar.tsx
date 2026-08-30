@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import {
   BarChart3,
   CalendarDays,
-  Cat,
   ListChecks,
   LogOut,
   Settings2,
