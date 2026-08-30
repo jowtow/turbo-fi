@@ -32,6 +32,7 @@ RUN apt-get update \
         ca-certificates \
         supervisor \
         nginx \
+        cron \
     && rm -rf /var/lib/apt/lists/*
 
 # Add the Microsoft package signing key and repositories
@@ -76,10 +77,13 @@ COPY docker/nginx-standalone.conf /etc/nginx/conf.d/default.conf
 COPY docker/supervisord.conf      /etc/supervisor/conf.d/turbofi.conf
 COPY docker/entrypoint.sh         /entrypoint.sh
 COPY docker/wait-for-mssql.sh     /app/wait-for-mssql.sh
-RUN chmod +x /entrypoint.sh /app/wait-for-mssql.sh
+COPY docker/backup.sh             /app/backup.sh
+RUN chmod +x /entrypoint.sh /app/wait-for-mssql.sh /app/backup.sh
 
 # Mount your SQL Server data directory here to persist all database files
 VOLUME ["/var/opt/mssql"]
+# Mount this to retrieve backup .bak files from the host
+VOLUME ["/backups"]
 
 EXPOSE 80
 
