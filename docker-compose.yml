@@ -8,11 +8,45 @@ services:
       - "1433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
+    networks:
+      - internal
     healthcheck:
       test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" || exit 1
       interval: 10s
       timeout: 5s
       retries: 12
+
+  api:
+    # Image is published to ghcr.io by the CI workflow (.github/workflows/docker-publish.yml)
+    image: ghcr.io/jowtow/turbo-fi-api:latest
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__TurboFi: "${ConnectionStrings__TurboFi:-Server=database,1433;Database=TurboFi;User Id=sa;Password=${MSSQL_SA_PASSWORD:-TurboFiDev!123};TrustServerCertificate=True}"
+      CorsOrigins: "${CorsOrigins:-http://localhost:5173}"
+    networks:
+      - internal
+      - proxy  # TODO: replace "proxy" with your actual reverse-proxy network name
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    # Image is published to ghcr.io by the CI workflow (.github/workflows/docker-publish.yml)
+    image: ghcr.io/jowtow/turbo-fi-web:latest
+    networks:
+      - proxy  # TODO: replace "proxy" with your actual reverse-proxy network name
+    depends_on:
+      - api
+    restart: unless-stopped
+
+networks:
+  internal:
+    # Private network shared only by turbofi services — not reachable by the proxy directly
+  proxy:
+    external: true
+    # TODO: set the name to match your existing reverse-proxy Docker network, e.g.:
+    # name: traefik_net
 
 volumes:
   sqlserver-data:

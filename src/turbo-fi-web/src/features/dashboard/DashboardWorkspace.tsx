@@ -10,7 +10,11 @@ import {
 import { Metric } from "../../components/Metric";
 import { MonthPicker } from "../../components/MonthPicker";
 import { PageHeading } from "../../components/PageHeading";
-import { SortableHeader, type SortDirection, TableControls } from "../../components/TableControls";
+import {
+  SortableHeader,
+  type SortDirection,
+  TableControls,
+} from "../../components/TableControls";
 import { money, monthLabel } from "../../lib/format";
 import type { CategoryTotal, ExpenseTypeTotal } from "../../types/finance";
 import { BurndownChart } from "./BurndownChart";
@@ -29,8 +33,16 @@ type DashboardRowData = CategoryTotal & {
   status: "Over plan" | "On track";
 };
 
-type DashboardSortColumn = "category" | "planned" | "actual" | "variance" | "status";
-type DashboardSorting = { column: DashboardSortColumn; direction: SortDirection };
+type DashboardSortColumn =
+  | "category"
+  | "planned"
+  | "actual"
+  | "variance"
+  | "status";
+type DashboardSorting = {
+  column: DashboardSortColumn;
+  direction: SortDirection;
+};
 
 export function DashboardWorkspace({
   month,
@@ -145,7 +157,7 @@ export function DashboardWorkspace({
         />
       </section>
       <BurndownChart month={month} expenseTypes={expenseTypes} />
-      <section className="card">
+      <section className="card mt-3">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="mb-1 text-xl">Planned versus actual</h2>
@@ -200,31 +212,71 @@ export function DashboardWorkspace({
             <thead>
               <tr>
                 <th>
-                  <SortableHeader direction={sorting?.column === "category" ? sorting.direction : undefined} label="Category" onSort={() => toggleSort("category")} />
+                  <SortableHeader
+                    direction={
+                      sorting?.column === "category"
+                        ? sorting.direction
+                        : undefined
+                    }
+                    label="Category"
+                    onSort={() => toggleSort("category")}
+                  />
                 </th>
                 <th>
-                  <SortableHeader direction={sorting?.column === "planned" ? sorting.direction : undefined} label="Plan" onSort={() => toggleSort("planned")} />
+                  <SortableHeader
+                    direction={
+                      sorting?.column === "planned"
+                        ? sorting.direction
+                        : undefined
+                    }
+                    label="Plan"
+                    onSort={() => toggleSort("planned")}
+                  />
                 </th>
                 <th>
-                  <SortableHeader direction={sorting?.column === "actual" ? sorting.direction : undefined} label="Actual" onSort={() => toggleSort("actual")} />
+                  <SortableHeader
+                    direction={
+                      sorting?.column === "actual"
+                        ? sorting.direction
+                        : undefined
+                    }
+                    label="Actual"
+                    onSort={() => toggleSort("actual")}
+                  />
                 </th>
                 <th>
-                  <SortableHeader direction={sorting?.column === "variance" ? sorting.direction : undefined} label="Variance" onSort={() => toggleSort("variance")} />
+                  <SortableHeader
+                    direction={
+                      sorting?.column === "variance"
+                        ? sorting.direction
+                        : undefined
+                    }
+                    label="Variance"
+                    onSort={() => toggleSort("variance")}
+                  />
                 </th>
                 <th>
-                  <SortableHeader direction={sorting?.column === "status" ? sorting.direction : undefined} label="Status" onSort={() => toggleSort("status")} />
+                  <SortableHeader
+                    direction={
+                      sorting?.column === "status"
+                        ? sorting.direction
+                        : undefined
+                    }
+                    label="Status"
+                    onSort={() => toggleSort("status")}
+                  />
                 </th>
               </tr>
             </thead>
             <tbody>
               {sorting
                 ? sortedRows.map((row) => (
-                      <DashboardRow
-                        key={row.categoryId}
-                        item={row}
-                        expenseTypeName={row.expenseTypeName}
-                      />
-                    ))
+                    <DashboardRow
+                      key={row.categoryId}
+                      item={row}
+                      expenseTypeName={row.expenseTypeName}
+                    />
+                  ))
                 : filteredExpenseTypes.map((expenseType) => (
                     <ExpenseTypeGroup
                       key={expenseType.expenseTypeId}

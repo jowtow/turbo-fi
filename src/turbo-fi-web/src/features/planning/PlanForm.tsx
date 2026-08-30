@@ -1,7 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { api } from "../../lib/api";
-import { SortableHeader, type SortDirection, TableControls } from "../../components/TableControls";
+import {
+  SortableHeader,
+  type SortDirection,
+  TableControls,
+} from "../../components/TableControls";
 import { money, monthLabel } from "../../lib/format";
 import type { Category, ExpenseType, PlannedEntry } from "../../types/finance";
 
@@ -95,17 +99,17 @@ export function PlanForm({
           sorting.column === "amount"
             ? left.entry.amount - right.entry.amount
             : (sorting.column === "category"
-                  ? left.categoryName
+                ? left.categoryName
+                : sorting.column === "expenseType"
+                  ? left.expenseTypeName
+                  : left.planType
+              ).localeCompare(
+                sorting.column === "category"
+                  ? right.categoryName
                   : sorting.column === "expenseType"
-                    ? left.expenseTypeName
-                    : left.planType
-                ).localeCompare(
-                  sorting.column === "category"
-                    ? right.categoryName
-                    : sorting.column === "expenseType"
-                      ? right.expenseTypeName
-                      : right.planType,
-                );
+                    ? right.expenseTypeName
+                    : right.planType,
+              );
         return sorting.direction === "asc" ? comparison : -comparison;
       })
     : rows;
@@ -209,7 +213,7 @@ export function PlanForm({
               : "Add a category budget to begin this month’s plan."}
           </p>
         </div>
-        <span className="rounded-full bg-lime-950 px-3 py-1 text-sm text-lime-300">
+        <span className="rounded-full bg-lime-950 px-3 py-1 text-sm text-lime-300 flex items-center">
           {entries.length} categories
         </span>
       </div>
@@ -305,16 +309,48 @@ export function PlanForm({
             <thead>
               <tr>
                 <th>
-                  <SortableHeader direction={sorting?.column === "category" ? sorting.direction : undefined} label="Category" onSort={() => toggleSort("category")} />
+                  <SortableHeader
+                    direction={
+                      sorting?.column === "category"
+                        ? sorting.direction
+                        : undefined
+                    }
+                    label="Category"
+                    onSort={() => toggleSort("category")}
+                  />
                 </th>
                 <th>
-                  <SortableHeader direction={sorting?.column === "expenseType" ? sorting.direction : undefined} label="Expense type" onSort={() => toggleSort("expenseType")} />
+                  <SortableHeader
+                    direction={
+                      sorting?.column === "expenseType"
+                        ? sorting.direction
+                        : undefined
+                    }
+                    label="Expense type"
+                    onSort={() => toggleSort("expenseType")}
+                  />
                 </th>
                 <th>
-                  <SortableHeader direction={sorting?.column === "amount" ? sorting.direction : undefined} label="Amount" onSort={() => toggleSort("amount")} />
+                  <SortableHeader
+                    direction={
+                      sorting?.column === "amount"
+                        ? sorting.direction
+                        : undefined
+                    }
+                    label="Amount"
+                    onSort={() => toggleSort("amount")}
+                  />
                 </th>
                 <th>
-                  <SortableHeader direction={sorting?.column === "planType" ? sorting.direction : undefined} label="Plan type" onSort={() => toggleSort("planType")} />
+                  <SortableHeader
+                    direction={
+                      sorting?.column === "planType"
+                        ? sorting.direction
+                        : undefined
+                    }
+                    label="Plan type"
+                    onSort={() => toggleSort("planType")}
+                  />
                 </th>
                 <th>
                   <span className="sr-only">Actions</span>
@@ -322,131 +358,133 @@ export function PlanForm({
               </tr>
             </thead>
             <tbody>
-              {sortedRows.map(({ entry, category, categoryName, expenseTypeName }) => {
-                const editing = editingPlan?.id === entry.id;
-                return (
-                  <tr key={entry.id}>
-                    <td className="font-medium">
-                      {editing ? (
-                        <input
-                          aria-label="Category name"
-                          value={editingCategoryName}
-                          onChange={(event) =>
-                            setEditingCategoryName(event.target.value)
-                          }
-                        />
-                      ) : (
-                        categoryName
-                      )}
-                    </td>
-                    <td>
-                      {editing ? (
-                        <select
-                          aria-label="Expense type"
-                          value={editingExpenseTypeId}
-                          onChange={(event) =>
-                            setEditingExpenseTypeId(event.target.value)
-                          }
-                        >
-                          {expenseTypes.map((type) => (
-                            <option key={type.id} value={type.id}>
-                              {type.name}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        expenseTypeName
-                      )}
-                    </td>
-                    <td>
-                      {editing ? (
-                        <input
-                          aria-label="Monthly amount"
-                          className="w-28"
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          value={editingPlan.amount}
-                          onChange={(event) =>
-                            setEditingPlan({
-                              ...editingPlan,
-                              amount: Number(event.target.value),
-                            })
-                          }
-                        />
-                      ) : (
-                        money(entry.amount)
-                      )}
-                    </td>
-                    <td>
-                      {editing ? (
-                        <label className="flex items-center gap-2 text-sm">
+              {sortedRows.map(
+                ({ entry, category, categoryName, expenseTypeName }) => {
+                  const editing = editingPlan?.id === entry.id;
+                  return (
+                    <tr key={entry.id}>
+                      <td className="font-medium">
+                        {editing ? (
                           <input
-                            className="h-4 w-4"
-                            type="checkbox"
-                            checked={editingPlan.isFixed}
+                            aria-label="Category name"
+                            value={editingCategoryName}
+                            onChange={(event) =>
+                              setEditingCategoryName(event.target.value)
+                            }
+                          />
+                        ) : (
+                          categoryName
+                        )}
+                      </td>
+                      <td>
+                        {editing ? (
+                          <select
+                            aria-label="Expense type"
+                            value={editingExpenseTypeId}
+                            onChange={(event) =>
+                              setEditingExpenseTypeId(event.target.value)
+                            }
+                          >
+                            {expenseTypes.map((type) => (
+                              <option key={type.id} value={type.id}>
+                                {type.name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          expenseTypeName
+                        )}
+                      </td>
+                      <td>
+                        {editing ? (
+                          <input
+                            aria-label="Monthly amount"
+                            className="w-28"
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={editingPlan.amount}
                             onChange={(event) =>
                               setEditingPlan({
                                 ...editingPlan,
-                                isFixed: event.target.checked,
+                                amount: Number(event.target.value),
                               })
                             }
                           />
-                          Fixed
-                        </label>
-                      ) : (
-                        <span
-                          className={`rounded-full px-2 py-1 text-xs ${entry.isFixed ? "bg-lime-950 text-lime-300" : "bg-emerald-900 text-emerald-200"}`}
-                        >
-                          {entry.isFixed ? "Fixed" : "Target"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="text-right">
-                      {editing ? (
-                        <>
-                          <button
-                            className="bg-transparent px-2 text-lime-300 hover:bg-emerald-900"
-                            aria-label={`Save ${categoryName}`}
-                            onClick={updatePlan}
+                        ) : (
+                          money(entry.amount)
+                        )}
+                      </td>
+                      <td>
+                        {editing ? (
+                          <label className="flex items-center gap-2 text-sm">
+                            <input
+                              className="h-4 w-4"
+                              type="checkbox"
+                              checked={editingPlan.isFixed}
+                              onChange={(event) =>
+                                setEditingPlan({
+                                  ...editingPlan,
+                                  isFixed: event.target.checked,
+                                })
+                              }
+                            />
+                            Fixed
+                          </label>
+                        ) : (
+                          <span
+                            className={`rounded-full px-2 py-1 text-xs ${entry.isFixed ? "bg-lime-950 text-lime-300" : "bg-emerald-900 text-emerald-200"}`}
                           >
-                            Save
-                          </button>
-                          <button
-                            className="bg-transparent px-2 text-emerald-200 hover:bg-emerald-900"
-                            onClick={() => setEditingPlan(undefined)}
-                          >
-                            Cancel
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            className="bg-transparent px-2 text-lime-300 hover:bg-emerald-900"
-                            aria-label={`Edit ${categoryName}`}
-                            onClick={() => {
-                              setEditingPlan(entry);
-                              setEditingCategoryName(category?.name ?? "");
-                              setEditingExpenseTypeId(
-                                category?.expenseTypeId ?? "",
-                              );
-                            }}
-                          >
-                            <Pencil size={17} />
-                          </button>
-                          <button
-                            className="bg-transparent px-2 text-red-300 hover:bg-red-950"
-                            aria-label={`Remove ${categoryName}`}
-                            onClick={() => removePlan(entry)}
-                          >
-                            <Trash2 size={17} />
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+                            {entry.isFixed ? "Fixed" : "Target"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-right">
+                        {editing ? (
+                          <>
+                            <button
+                              className="bg-transparent px-2 text-lime-300 hover:bg-emerald-900"
+                              aria-label={`Save ${categoryName}`}
+                              onClick={updatePlan}
+                            >
+                              Save
+                            </button>
+                            <button
+                              className="bg-transparent px-2 text-emerald-200 hover:bg-emerald-900"
+                              onClick={() => setEditingPlan(undefined)}
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              className="bg-transparent px-2 text-lime-300 hover:bg-emerald-900"
+                              aria-label={`Edit ${categoryName}`}
+                              onClick={() => {
+                                setEditingPlan(entry);
+                                setEditingCategoryName(category?.name ?? "");
+                                setEditingExpenseTypeId(
+                                  category?.expenseTypeId ?? "",
+                                );
+                              }}
+                            >
+                              <Pencil size={17} />
+                            </button>
+                            <button
+                              className="bg-transparent px-2 text-red-300 hover:bg-red-950"
+                              aria-label={`Remove ${categoryName}`}
+                              onClick={() => removePlan(entry)}
+                            >
+                              <Trash2 size={17} />
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                },
+              )}
             </tbody>
           </table>
           {!rows.length && (

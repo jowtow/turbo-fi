@@ -89,13 +89,18 @@ export function CategorizationCard({
     if (!rulePhrase.trim() || !categoryId) return;
     setRuleMessage("");
     try {
-      await api.post("/phrase-rules", { phrase: rulePhrase.trim(), categoryId });
+      await api.post("/phrase-rules", {
+        phrase: rulePhrase.trim(),
+        categoryId,
+      });
       setSavingRule(false);
       setRulePhrase("");
       await onChanged();
     } catch (reason) {
       setRuleMessage(
-        reason instanceof Error ? reason.message : "Unable to save phrase rule.",
+        reason instanceof Error
+          ? reason.message
+          : "Unable to save phrase rule.",
       );
     }
   }
@@ -146,11 +151,8 @@ export function CategorizationCard({
       >
         {money(transaction.amount)}
       </strong>
-      <form
-        className="mt-9 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"
-        onSubmit={categorize}
-      >
-        <div>
+      <form className="mt-9 flex gap-4 items-center" onSubmit={categorize}>
+        <div className="flex-1">
           <label
             className="mb-1 block text-sm font-medium text-emerald-100"
             htmlFor="category"
@@ -182,14 +184,17 @@ export function CategorizationCard({
           {suggested && (
             <p className="mt-2 text-sm text-lime-300">
               {transaction.suggestionSource === "phraseRule" ? (
-                <>Matched phrase rule: <strong>{transaction.matchedPhrase}</strong></>
+                <>
+                  Matched phrase rule:{" "}
+                  <strong>{transaction.matchedPhrase}</strong>
+                </>
               ) : (
                 <>Suggested from similar previous transactions: {suggested}</>
               )}
             </p>
           )}
         </div>
-        <button className="self-end" disabled={!categoryId} type="submit">
+        <button disabled={!categoryId} type="submit">
           <Check className="mr-1 inline" size={17} />
           Confirm & next
         </button>
@@ -208,9 +213,15 @@ export function CategorizationCard({
         </button>
       )}
       {savingRule && (
-        <form className="mt-3 flex flex-wrap items-end gap-2" onSubmit={savePhraseRule}>
+        <form
+          className="mt-3 flex flex-wrap items-end gap-2"
+          onSubmit={savePhraseRule}
+        >
           <div>
-            <label className="mb-1 block text-xs font-medium text-emerald-300" htmlFor="rule-phrase">
+            <label
+              className="mb-1 block text-xs font-medium text-emerald-300"
+              htmlFor="rule-phrase"
+            >
               Phrase (appears anywhere in description)
             </label>
             <input
@@ -223,21 +234,32 @@ export function CategorizationCard({
               required
             />
           </div>
-          <button className="text-sm" type="submit" disabled={!rulePhrase.trim() || alreadyHasRule}>
+          <button
+            className="text-sm"
+            type="submit"
+            disabled={!rulePhrase.trim() || alreadyHasRule}
+          >
             Save rule
           </button>
           <button
             className="bg-transparent text-sm text-emerald-300 hover:bg-emerald-900"
             type="button"
-            onClick={() => { setSavingRule(false); setRuleMessage(""); }}
+            onClick={() => {
+              setSavingRule(false);
+              setRuleMessage("");
+            }}
           >
             Cancel
           </button>
           {alreadyHasRule && (
-            <p className="w-full text-xs text-amber-300">A rule for this phrase already exists.</p>
+            <p className="w-full text-xs text-amber-300">
+              A rule for this phrase already exists.
+            </p>
           )}
           {ruleMessage && (
-            <p className="w-full text-xs text-red-300" role="alert">{ruleMessage}</p>
+            <p className="w-full text-xs text-red-300" role="alert">
+              {ruleMessage}
+            </p>
           )}
         </form>
       )}
