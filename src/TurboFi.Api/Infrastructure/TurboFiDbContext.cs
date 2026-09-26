@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TurboFi.Api.Domain;
@@ -15,6 +16,7 @@ public sealed class TurboFiDbContext(DbContextOptions<TurboFiDbContext> options)
     public DbSet<PlannedEntry> PlannedEntries => Set<PlannedEntry>();
     public DbSet<FinancialTransaction> FinancialTransactions => Set<FinancialTransaction>();
     public DbSet<CategoryPhraseRule> CategoryPhraseRules => Set<CategoryPhraseRule>();
+    public DbSet<ImportScheme> ImportSchemes => Set<ImportScheme>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -40,5 +42,46 @@ public sealed class TurboFiDbContext(DbContextOptions<TurboFiDbContext> options)
         builder.Entity<PlannedEntry>().Property(entry => entry.Amount).HasPrecision(18, 2);
         builder.Entity<PlannedEntry>().HasIndex(entry => new { entry.HouseholdId, entry.CategoryId, entry.PlanMonth }).IsUnique();
         builder.Entity<PlannedEntry>().Property(entry => entry.IsFixed).HasDefaultValue(false);
+
+        // ImportScheme: household-scoped schemes have a unique name per household;
+        // global schemes (HouseholdId IS NULL) are managed by seed data.
+        builder.Entity<ImportScheme>()
+            .HasIndex(s => new { s.HouseholdId, s.Name })
+            .HasFilter("[HouseholdId] IS NOT NULL")
+            .IsUnique();
+
+        // Seed the built-in Wells Fargo import scheme (global, read-only for users)
+        builder.Entity<ImportScheme>().HasData(new ImportScheme
+        {
+            Id = new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
+            Name = "Wells Fargo",
+            IsGlobal = true,
+            HouseholdId = null,
+            DateColumn = "DATE",
+            DescriptionColumn = "DESCRIPTION",
+            AmountColumn = "AMOUNT",
+            CheckNumberColumn = "CHECK #",
+            StatusColumn = "STATUS",
+            DateFormat = "M/d/yyyy",
+            InvertAmount = false,
+            SkipHeaderRows = 0,
+            RequiredHeadersJson = JsonSerializer.Serialize(new[] { "DATE", "DESCRIPTION", "AMOUNT", "CHECK #", "STATUS" })
+        });
+        builder.Entity<ImportScheme>().HasData(new ImportScheme
+        {
+            Id = new Guid("b2c3d4e5-f6a7-8901-bcde-f12345678901"),
+            Name = "LEVO",
+            IsGlobal = true,
+            HouseholdId = null,
+            DateColumn = "Date",
+            DescriptionColumn = "Description",
+            AmountColumn = "Amount",
+            CheckNumberColumn = "Check #",
+            StatusColumn = null,
+            DateFormat = "M/d/yyyy",
+            InvertAmount = false,
+            SkipHeaderRows = 0,
+            RequiredHeadersJson = JsonSerializer.Serialize(new[] { "Account", "Date", "Description", "Amount" })
+        });
     }
 }

@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TurboFi.Api.Domain;
 using TurboFi.Api.Infrastructure;
+using TurboFi.Api.Models;
+using TurboFi.Api.Services;
 
 namespace TurboFi.Api.Controllers;
 
@@ -23,7 +25,9 @@ public sealed class AuthController(
         var household = new Household { Name = request.HouseholdName.Trim() };
         var user = new ApplicationUser { UserName = request.Email, Email = request.Email, Household = household };
         var result = await userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded) return ValidationProblem(new ValidationProblemDetails(result.Errors.ToDictionary(error => error.Code, error => new[] { error.Description })));
+        if (!result.Succeeded)
+            return ValidationProblem(new ValidationProblemDetails(
+                result.Errors.ToDictionary(error => error.Code, error => new[] { error.Description })));
 
         household.OwnerUserId = user.Id;
         db.ExpenseTypes.AddRange(ExpenseTypeDefaults.Names.Select(name => new ExpenseType
@@ -57,11 +61,10 @@ public sealed class AuthController(
     {
         var user = await userManager.GetUserAsync(User);
         if (user is null) return Unauthorized();
-        var householdName = await db.Households.Where(household => household.Id == user.HouseholdId)
-            .Select(household => household.Name).SingleAsync();
+        var householdName = await db.Households
+            .Where(household => household.Id == user.HouseholdId)
+            .Select(household => household.Name)
+            .SingleAsync();
         return Ok(new { user.Email, user.HouseholdId, householdName });
     }
 }
-
-public sealed record RegisterRequest(string Email, string Password, string HouseholdName);
-public sealed record LoginRequest(string Email, string Password);

@@ -62,7 +62,30 @@ export type ImportConflict = {
   amount: number;
   reason: string;
 };
-export type ImportResult = { imported?: number; conflicts?: ImportConflict[] };
+export type ImportResult = {
+  imported?: number;
+  skipped?: Array<{
+    index: number;
+    description: string;
+    transactionDate: string;
+    amount: number;
+  }>;
+  conflicts?: ImportConflict[];
+};
+export type ImportScheme = {
+  id: string;
+  name: string;
+  isGlobal: boolean;
+  dateColumn: string;
+  descriptionColumn: string;
+  amountColumn: string;
+  checkNumberColumn?: string | null;
+  statusColumn?: string | null;
+  dateFormat: string;
+  invertAmount: boolean;
+  skipHeaderRows: number;
+  requiredHeaders?: string[] | null;
+};
 export type BurndownPoint = {
   day: number;
   planned: number;

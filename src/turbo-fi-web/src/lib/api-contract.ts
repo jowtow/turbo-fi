@@ -4,6 +4,7 @@ import type {
   Category,
   Dashboard,
   ExpenseType,
+  ImportScheme,
   ImportResult,
   PhraseRule,
   PlannedEntry,
@@ -41,6 +42,7 @@ type MarkTransferRequest = {
   destinationAccountId: string;
   destinationName: null;
 };
+type ImportSchemeRequest = Omit<ImportScheme, "id" | "isGlobal">;
 
 export type GetPath =
   | "/auth/me"
@@ -49,6 +51,7 @@ export type GetPath =
   | "/categories"
   | "/transactions/review"
   | "/phrase-rules"
+  | "/import-schemes"
   | `/dashboard?${string}`
   | `/dashboard/burndown?${string}`
   | `/planned-entries?${string}`;
@@ -62,21 +65,24 @@ export type PostPath =
   | "/categories"
   | "/planned-entries"
   | "/phrase-rules"
+  | "/import-schemes"
   | `/transactions/${string}/transfer`;
 
 export type PutPath =
   | `/transactions/${string}/category`
   | `/expense-types/${string}`
   | `/categories/${string}`
-  | `/planned-entries/${string}`;
+  | `/planned-entries/${string}`
+  | `/import-schemes/${string}`;
 
 export type DeletePath =
   | `/expense-types/${string}`
   | `/categories/${string}`
   | `/phrase-rules/${string}`
-  | `/planned-entries/${string}`;
+  | `/planned-entries/${string}`
+  | `/import-schemes/${string}`;
 
-export type FormPath = "/imports/wells-fargo";
+export type FormPath = "/imports";
 
 export type GetResponse<Path extends GetPath> = Path extends "/auth/me"
   ? CurrentUser
@@ -96,6 +102,8 @@ export type GetResponse<Path extends GetPath> = Path extends "/auth/me"
                 ? PhraseRule[]
                 : Path extends `/planned-entries?${string}`
                   ? PlannedEntry[]
+                  : Path extends "/import-schemes"
+                    ? ImportScheme[]
                   : never;
 
 export type PostBody<Path extends PostPath> = Path extends "/auth/register"
@@ -114,6 +122,8 @@ export type PostBody<Path extends PostPath> = Path extends "/auth/register"
               ? PlannedEntryRequest
               : Path extends "/phrase-rules"
                 ? PhraseRuleRequest
+                : Path extends "/import-schemes"
+                  ? ImportSchemeRequest
                 : Path extends `/transactions/${string}/transfer`
                   ? MarkTransferRequest
                   : never;
@@ -126,6 +136,8 @@ export type PostResponse<Path extends PostPath> = Path extends "/accounts"
       ? Category
       : Path extends "/planned-entries"
         ? PlannedEntry
+        : Path extends "/import-schemes"
+          ? ImportScheme
         : void;
 
 export type PutBody<Path extends PutPath> =
@@ -137,6 +149,8 @@ export type PutBody<Path extends PutPath> =
         ? CategoryRequest
         : Path extends `/planned-entries/${string}`
           ? PlannedEntryUpdateRequest
+          : Path extends `/import-schemes/${string}`
+            ? ImportSchemeRequest
           : never;
 
 export type PutResponse<Path extends PutPath> =
@@ -146,6 +160,8 @@ export type PutResponse<Path extends PutPath> =
       ? Category
       : Path extends `/planned-entries/${string}`
         ? PlannedEntry
+        : Path extends `/import-schemes/${string}`
+          ? ImportScheme
         : void;
 
 export type DeleteResponse<Path extends DeletePath> = Path extends DeletePath
@@ -153,4 +169,4 @@ export type DeleteResponse<Path extends DeletePath> = Path extends DeletePath
   : never;
 
 export type FormResponse<Path extends FormPath> =
-  Path extends "/imports/wells-fargo" ? ImportResult : never;
+  Path extends "/imports" ? ImportResult : never;

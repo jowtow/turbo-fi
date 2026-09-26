@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TurboFi.Api.Domain;
 using TurboFi.Api.Infrastructure;
+using TurboFi.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<TurboFiDbContext>(options =>
@@ -27,6 +28,17 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
+
+// Domain services
+builder.Services.AddScoped<AccountService>();
+builder.Services.AddScoped<ExpenseTypeService>();
+builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<PlannedEntryService>();
+builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<PhraseRuleService>();
+builder.Services.AddScoped<TransactionService>();
+builder.Services.AddScoped<ImportService>();
+builder.Services.AddScoped<HouseholdService>();
 var corsOrigins = builder.Configuration["CorsOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
     ?? ["http://localhost:5173"];
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
@@ -165,6 +177,49 @@ using (var scope = app.Services.CreateScope())
             );
             CREATE UNIQUE INDEX IX_CategoryPhraseRules_HouseholdId_Phrase
                 ON dbo.CategoryPhraseRules (HouseholdId, Phrase);
+        END
+        """);
+    await db.Database.ExecuteSqlRawAsync("""
+        IF OBJECT_ID('dbo.ImportSchemes', 'U') IS NULL
+        BEGIN
+            CREATE TABLE dbo.ImportSchemes (
+                Id uniqueidentifier NOT NULL PRIMARY KEY,
+                Name nvarchar(450) NOT NULL,
+                IsGlobal bit NOT NULL,
+                HouseholdId uniqueidentifier NULL,
+                DateColumn nvarchar(max) NOT NULL,
+                DescriptionColumn nvarchar(max) NOT NULL,
+                AmountColumn nvarchar(max) NOT NULL,
+                CheckNumberColumn nvarchar(max) NULL,
+                StatusColumn nvarchar(max) NULL,
+                DateFormat nvarchar(max) NOT NULL,
+                InvertAmount bit NOT NULL,
+                SkipHeaderRows int NOT NULL,
+                RequiredHeadersJson nvarchar(max) NULL
+            );
+            CREATE UNIQUE INDEX IX_ImportSchemes_HouseholdId_Name
+                ON dbo.ImportSchemes (HouseholdId, Name)
+                WHERE HouseholdId IS NOT NULL;
+        END
+        IF NOT EXISTS (SELECT 1 FROM dbo.ImportSchemes WHERE Id = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890')
+        BEGIN
+            INSERT INTO dbo.ImportSchemes (
+                Id, Name, IsGlobal, HouseholdId, DateColumn, DescriptionColumn, AmountColumn,
+                CheckNumberColumn, StatusColumn, DateFormat, InvertAmount, SkipHeaderRows, RequiredHeadersJson
+            ) VALUES (
+                'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Wells Fargo', 1, NULL, 'DATE', 'DESCRIPTION',
+                'AMOUNT', 'CHECK #', 'STATUS', 'M/d/yyyy', 0, 0, '["DATE","DESCRIPTION","AMOUNT","CHECK #","STATUS"]'
+            );
+        END
+        IF NOT EXISTS (SELECT 1 FROM dbo.ImportSchemes WHERE Id = 'b2c3d4e5-f6a7-8901-bcde-f12345678901')
+        BEGIN
+            INSERT INTO dbo.ImportSchemes (
+                Id, Name, IsGlobal, HouseholdId, DateColumn, DescriptionColumn, AmountColumn,
+                CheckNumberColumn, StatusColumn, DateFormat, InvertAmount, SkipHeaderRows, RequiredHeadersJson
+            ) VALUES (
+                'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Wells Fargo Transaction History', 1, NULL, 'Date',
+                'Description', 'Amount', 'Check #', NULL, 'M/d/yyyy', 0, 0, '["Account","Date","Description","Amount"]'
+            );
         END
         """);
 }

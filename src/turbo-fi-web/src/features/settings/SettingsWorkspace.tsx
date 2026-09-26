@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { PageHeading } from '../../components/PageHeading'
 import { api } from '../../lib/api'
 import { useFinanceReferenceData } from '../finance/useFinanceReferenceData'
+import { ImportSchemeEditor } from './ImportSchemeEditor'
 
 export function SettingsWorkspace() {
   const queryClient = useQueryClient()
@@ -133,6 +134,7 @@ export function SettingsWorkspace() {
             </table>
           )}
         </section>
+        <ImportSchemeEditor />
       </div>
     </div>
   )
