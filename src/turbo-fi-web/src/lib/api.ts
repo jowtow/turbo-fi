@@ -1,6 +1,7 @@
 import type {
   DeletePath,
   DeleteResponse,
+  DownloadPath,
   FormPath,
   FormResponse,
   GetPath,
@@ -16,6 +17,12 @@ import type {
 class ApiService {
   async get<Path extends GetPath>(path: Path): Promise<GetResponse<Path>> {
     return this.request(path, { method: 'GET' })
+  }
+
+  async download<Path extends DownloadPath>(path: Path): Promise<Blob> {
+    const response = await fetch(`/api${path}`, { credentials: 'include' })
+    if (!response.ok) throw new Error(await response.text() || 'Download failed.')
+    return response.blob()
   }
 
   async post<Path extends PostPath>(path: Path, body?: PostBody<Path>): Promise<PostResponse<Path>> {

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 using TurboFi.Api.Domain;
 using TurboFi.Api.Infrastructure;
 using TurboFi.Api.Services;
@@ -35,6 +36,7 @@ builder.Services.AddScoped<ExpenseTypeService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<PlannedEntryService>();
 builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<MonthlyReportService>();
 builder.Services.AddScoped<PhraseRuleService>();
 builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<ImportService>();
@@ -48,6 +50,7 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .AllowCredentials()));
 
 var app = builder.Build();
+QuestPDF.Settings.License = LicenseType.Community;
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();

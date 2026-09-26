@@ -15,6 +15,7 @@ public sealed class FinanceController(
     CategoryService categoryService,
     PlannedEntryService plannedEntryService,
     DashboardService dashboardService,
+    MonthlyReportService monthlyReportService,
     PhraseRuleService phraseRuleService) : ControllerBase
 {
     private Guid HouseholdId => Guid.Parse(User.FindFirstValue("householdId")
@@ -76,6 +77,18 @@ public sealed class FinanceController(
     [HttpGet("dashboard")]
     public async Task<ActionResult> Dashboard([FromQuery] int? year, [FromQuery] int? month) =>
         (await dashboardService.GetDashboardAsync(HouseholdId, year, month)).ToActionResult(this);
+
+    [HttpGet("dashboard/monthly-report")]
+    public async Task<ActionResult> MonthlyReport(
+        [FromQuery] int? year, [FromQuery] int? month, [FromQuery] string? search,
+        [FromQuery] Guid? expenseTypeId, [FromQuery] string? status)
+    {
+        var result = await monthlyReportService.GetMonthlyReportAsync(
+            HouseholdId, year, month, search, expenseTypeId, status);
+        if (!result.IsSuccess) return result.ToActionResult(this);
+        var report = (MonthlyReportService.GeneratedReport)result.Data!;
+        return File(report.Content, "application/pdf", report.FileName);
+    }
 
     [HttpGet("dashboard/burndown")]
     public async Task<ActionResult> Burndown(

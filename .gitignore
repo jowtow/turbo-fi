@@ -7,3 +7,4 @@ dist/
 .vs/
 .vscode/*.log
 
+src/TurboFi.Api/artifacts/

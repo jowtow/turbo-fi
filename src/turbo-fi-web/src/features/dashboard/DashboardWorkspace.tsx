@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BarChart3,
   CircleCheck,
+  Download,
   Inbox,
   WalletCards,
 } from "lucide-react";
@@ -15,7 +16,8 @@ import {
   type SortDirection,
   TableControls,
 } from "../../components/TableControls";
-import { money, monthLabel } from "../../lib/format";
+import { money, monthLabel, monthParams } from "../../lib/format";
+import { api } from "../../lib/api";
 import type { CategoryTotal, ExpenseTypeTotal } from "../../types/finance";
 import { BurndownChart } from "./BurndownChart";
 import { useDashboard } from "./useDashboard";
@@ -125,12 +127,34 @@ export function DashboardWorkspace({
     );
   }
 
+  async function downloadReport() {
+    const params = new URLSearchParams(monthParams(month));
+    if (search.trim()) params.set("search", search.trim());
+    if (expenseTypeFilter) params.set("expenseTypeId", expenseTypeFilter);
+    if (statusFilter) params.set("status", statusFilter);
+    const blob = await api.download(`/dashboard/monthly-report?${params}`);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `turbo-fi-report-${month}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="workspace">
       <PageHeading
         eyebrow="Operating view"
         title={monthLabel(month)}
-        actions={<MonthPicker month={month} onChange={onMonthChange} />}
+        actions={
+          <div className="flex items-center gap-2">
+            <button onClick={() => void downloadReport()}>
+              <Download size={16} className="mr-1 inline" />
+              Download report
+            </button>
+            <MonthPicker month={month} onChange={onMonthChange} />
+          </div>
+        }
       />
       <section className="mb-7 grid gap-4 md:grid-cols-3">
         <Metric icon={<BarChart3 />} label="Planned" value={money(planned)} />

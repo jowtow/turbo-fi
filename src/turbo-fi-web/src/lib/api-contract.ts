@@ -87,6 +87,7 @@ export type DeletePath =
   | `/import-schemes/${string}`;
 
 export type FormPath = "/imports";
+export type DownloadPath = `/dashboard/monthly-report?${string}`;
 
 export type GetResponse<Path extends GetPath> = Path extends "/auth/me"
   ? CurrentUser
