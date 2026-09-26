@@ -151,8 +151,8 @@ export function CategorizationCard({
       >
         {money(transaction.amount)}
       </strong>
-      <form className="mt-9 flex gap-4 items-center" onSubmit={categorize}>
-        <div className="flex-1">
+      <form className="mt-9 flex gap-4 items-end" onSubmit={categorize}>
+        <div className="">
           <label
             className="mb-1 block text-sm font-medium text-emerald-100"
             htmlFor="category"
@@ -197,6 +197,13 @@ export function CategorizationCard({
         <button disabled={!categoryId} type="submit">
           <Check className="mr-1 inline" size={17} />
           Confirm & next
+        </button>
+        <button
+          className="mt-4 bg-transparent text-emerald-200 hover:bg-emerald-900"
+          type="button"
+          onClick={markTransfer}
+        >
+          Mark as transfer
         </button>
       </form>
       {categoryId && !savingRule && (
@@ -263,13 +270,7 @@ export function CategorizationCard({
           )}
         </form>
       )}
-      <button
-        className="mt-4 bg-transparent text-emerald-200 hover:bg-emerald-900"
-        type="button"
-        onClick={markTransfer}
-      >
-        Mark as transfer
-      </button>
+
       {message && (
         <p className="mt-3 text-sm text-red-300" role="alert">
           {message}

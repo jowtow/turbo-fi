@@ -6,13 +6,14 @@ import {
   LogOut,
   Settings2,
 } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { workspacePaths } from "../../lib/routes";
 import type { Workspace } from "../../types/finance";
 
 type SidebarProps = {
   workspace: Workspace;
   householdName: string;
   reviewCount: number;
-  onSelect: (workspace: Workspace) => void;
   onSignOut: () => Promise<void>;
 };
 
@@ -20,7 +21,6 @@ export function Sidebar({
   workspace,
   householdName,
   reviewCount,
-  onSelect,
   onSignOut,
 }: SidebarProps) {
   const links: { id: Workspace; label: string; icon: ReactNode }[] = [
@@ -40,10 +40,10 @@ export function Sidebar({
       </div>
       <nav className="space-y-1">
         {links.map((link) => (
-          <button
+          <NavLink
             key={link.id}
+            to={workspacePaths[link.id]}
             className={`flex shrink-0 items-center gap-3 px-3 py-2 text-left ${workspace === link.id ? "bg-lime-400 text-zinc-950 hover:bg-lime-300" : "bg-transparent text-emerald-100 hover:bg-emerald-900"}`}
-            onClick={() => onSelect(link.id)}
           >
             {link.icon}
             <span>{link.label}</span>
@@ -54,7 +54,7 @@ export function Sidebar({
                 {reviewCount}
               </span>
             )}
-          </button>
+          </NavLink>
         ))}
       </nav>
       <div className="mt-auto border-t border-emerald-800/80 pt-5">
