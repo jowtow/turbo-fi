@@ -7,6 +7,120 @@ namespace TurboFi.Api.Services;
 
 public sealed class TransactionService(TurboFiDbContext db)
 {
+    public async Task<ServiceResult> GetTransactionsAsync(
+        Guid householdId,
+        int? year,
+        int? month,
+        Guid? accountId,
+        Guid? categoryId,
+        bool uncategorized)
+    {
+        var range = GetMonthRange(year, month);
+        if (range is null) return ServiceResult.BadRequest("Year and month must identify a valid month.");
+        if (categoryId.HasValue && uncategorized)
+            return ServiceResult.BadRequest("Choose a category or uncategorized transactions, not both.");
+
+        var (start, end) = range.Value;
+        var query = db.FinancialTransactions
+            .Where(transaction => transaction.HouseholdId == householdId
+                && !transaction.IsTransfer
+                && transaction.TransactionDate >= start
+                && transaction.TransactionDate < end);
+
+        if (accountId.HasValue)
+        {
+            if (!await db.FinancialAccounts.AnyAsync(account =>
+                    account.Id == accountId.Value && account.HouseholdId == householdId))
+                return ServiceResult.BadRequest("The selected account does not belong to your household.");
+            query = query.Where(transaction => transaction.FinancialAccountId == accountId.Value);
+        }
+
+        if (categoryId.HasValue)
+        {
+            if (!await db.Categories.AnyAsync(category =>
+                    category.Id == categoryId.Value && category.HouseholdId == householdId))
+                return ServiceResult.BadRequest("The selected category does not belong to your household.");
+            query = query.Where(transaction => transaction.CategoryId == categoryId.Value);
+        }
+        else if (uncategorized)
+        {
+            query = query.Where(transaction => transaction.CategoryId == null);
+        }
+
+        var accountNames = await db.FinancialAccounts
+            .Where(account => account.HouseholdId == householdId)
+            .ToDictionaryAsync(account => account.Id, account => account.Name);
+        var categoryNames = await db.Categories
+            .Where(category => category.HouseholdId == householdId)
+            .ToDictionaryAsync(category => category.Id, category => category.Name);
+        var transactions = await query
+            .OrderByDescending(transaction => transaction.TransactionDate)
+            .ThenByDescending(transaction => transaction.ImportedAt)
+            .ToListAsync();
+
+        return ServiceResult.Ok(transactions.Select(transaction => new
+        {
+            transaction.Id,
+            transaction.FinancialAccountId,
+            accountName = accountNames.GetValueOrDefault(transaction.FinancialAccountId, "Unknown account"),
+            transaction.CategoryId,
+            categoryName = transaction.CategoryId is { } id
+                ? categoryNames.GetValueOrDefault(id, "Unknown category")
+                : null,
+            transaction.TransactionDate,
+            transaction.Description,
+            transaction.Amount
+        }));
+    }
+
+    public async Task<ServiceResult> GetCategorySpendingAsync(
+        Guid householdId, int? year, int? month, Guid? accountId)
+    {
+        var range = GetMonthRange(year, month);
+        if (range is null) return ServiceResult.BadRequest("Year and month must identify a valid month.");
+
+        var (start, end) = range.Value;
+        var query = db.FinancialTransactions
+            .Where(transaction => transaction.HouseholdId == householdId
+                && !transaction.IsTransfer
+                && transaction.CategoryId != null
+                && transaction.Amount < 0
+                && transaction.TransactionDate >= start
+                && transaction.TransactionDate < end);
+
+        if (accountId.HasValue)
+        {
+            if (!await db.FinancialAccounts.AnyAsync(account =>
+                    account.Id == accountId.Value && account.HouseholdId == householdId))
+                return ServiceResult.BadRequest("The selected account does not belong to your household.");
+            query = query.Where(transaction => transaction.FinancialAccountId == accountId.Value);
+        }
+
+        var categoryNames = await db.Categories
+            .Where(category => category.HouseholdId == householdId)
+            .ToDictionaryAsync(category => category.Id, category => category.Name);
+        var totals = await query
+            .GroupBy(transaction => transaction.CategoryId!.Value)
+            .Select(group => new
+            {
+                CategoryId = group.Key,
+                Amount = group.Sum(transaction => -transaction.Amount),
+                TransactionCount = group.Count()
+            })
+            .ToListAsync();
+
+        return ServiceResult.Ok(totals
+            .Select(total => new
+            {
+                total.CategoryId,
+                name = categoryNames.GetValueOrDefault(total.CategoryId, "Unknown category"),
+                total.Amount,
+                total.TransactionCount
+            })
+            .OrderByDescending(total => total.Amount)
+            .ThenBy(total => total.name));
+    }
+
     public async Task<ServiceResult> GetReviewQueueAsync(Guid householdId)
     {
         var transactions = await db.FinancialTransactions
@@ -170,4 +284,15 @@ public sealed class TransactionService(TurboFiDbContext db)
         .Select(char.ToUpperInvariant)
         .Take(8)
         .ToArray());
+
+    private static (DateOnly Start, DateOnly End)? GetMonthRange(int? year, int? month)
+    {
+        var now = DateOnly.FromDateTime(DateTime.UtcNow);
+        var selectedYear = year ?? now.Year;
+        var selectedMonth = month ?? now.Month;
+        if (selectedMonth is < 1 or > 12 || selectedYear is < 1 or > 9999) return null;
+
+        var start = new DateOnly(selectedYear, selectedMonth, 1);
+        return (start, start.AddMonths(1));
+    }
 }

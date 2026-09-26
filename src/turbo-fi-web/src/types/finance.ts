@@ -50,6 +50,22 @@ export type ReviewTransaction = {
   suggestionSource?: "phraseRule" | "prefix";
   matchedPhrase?: string;
 };
+export type Transaction = {
+  id: string;
+  financialAccountId: string;
+  accountName: string;
+  categoryId?: string;
+  categoryName?: string;
+  transactionDate: string;
+  description: string;
+  amount: number;
+};
+export type CategorySpending = {
+  categoryId: string;
+  name: string;
+  amount: number;
+  transactionCount: number;
+};
 export type CategoryPhraseRule = {
   id: string;
   phrase: string;

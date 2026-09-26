@@ -2,6 +2,7 @@ import type {
   Account,
   BurndownPoint,
   Category,
+  CategorySpending,
   Dashboard,
   ExpenseType,
   ImportScheme,
@@ -9,6 +10,7 @@ import type {
   PhraseRule,
   PlannedEntry,
   ReviewTransaction,
+  Transaction,
 } from "../types/finance";
 
 export type CurrentUser = { email: string; householdName: string };
@@ -50,6 +52,8 @@ export type GetPath =
   | "/expense-types"
   | "/categories"
   | "/transactions/review"
+  | `/transactions?${string}`
+  | `/transactions/categories?${string}`
   | "/phrase-rules"
   | "/import-schemes"
   | `/dashboard?${string}`
@@ -94,6 +98,10 @@ export type GetResponse<Path extends GetPath> = Path extends "/auth/me"
         ? Category[]
         : Path extends "/transactions/review"
           ? ReviewTransaction[]
+          : Path extends `/transactions/categories?${string}`
+            ? CategorySpending[]
+            : Path extends `/transactions?${string}`
+              ? Transaction[]
           : Path extends `/dashboard?${string}`
             ? Dashboard
             : Path extends `/dashboard/burndown?${string}`

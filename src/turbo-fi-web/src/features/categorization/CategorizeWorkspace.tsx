@@ -5,6 +5,7 @@ import { money } from "../../lib/format";
 import { useFinanceReferenceData } from "../finance/useFinanceReferenceData";
 import type { Category, ReviewTransaction } from "../../types/finance";
 import { CategorizationCard } from "./CategorizationCard";
+import { CategoryBrowser } from "./CategoryBrowser";
 import { ImportCard } from "./ImportCard";
 
 function suggestedCategoryName(
@@ -47,6 +48,11 @@ export function CategorizeWorkspace() {
         />
         <ImportCard accounts={accounts} onImported={refresh} />
       </div>
+      <CategoryBrowser
+        accounts={accounts}
+        categories={categories}
+        expenseTypes={expenseTypes}
+      />
       {transactions.length > 1 && (
         <section className="card mt-6 overflow-x-auto">
           <h2 className="mb-4 text-lg font-semibold">Upcoming transactions</h2>

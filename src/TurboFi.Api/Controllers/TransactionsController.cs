@@ -41,6 +41,24 @@ public sealed class TransactionsController(TransactionService transactionService
     public async Task<ActionResult> ReviewQueue() =>
         (await transactionService.GetReviewQueueAsync(HouseholdId)).ToActionResult(this);
 
+    [HttpGet("transactions")]
+    public async Task<ActionResult> Transactions(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] Guid? accountId,
+        [FromQuery] Guid? categoryId,
+        [FromQuery] bool uncategorized = false) =>
+        (await transactionService.GetTransactionsAsync(
+            HouseholdId, year, month, accountId, categoryId, uncategorized)).ToActionResult(this);
+
+    [HttpGet("transactions/categories")]
+    public async Task<ActionResult> CategorySpending(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] Guid? accountId) =>
+        (await transactionService.GetCategorySpendingAsync(HouseholdId, year, month, accountId))
+            .ToActionResult(this);
+
     [HttpGet("transactions/transfers")]
     public async Task<ActionResult> Transfers() =>
         (await transactionService.GetTransfersAsync(HouseholdId)).ToActionResult(this);
