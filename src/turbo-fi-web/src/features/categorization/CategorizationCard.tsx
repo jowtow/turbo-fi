@@ -141,7 +141,12 @@ export function CategorizationCard({
       <p className="mb-2 text-sm uppercase tracking-wider text-emerald-300">
         Transaction
       </p>
-      <h2 className="mb-2 break-words text-2xl">{transaction.description}</h2>
+      <h2
+        className="mb-2 truncate text-2xl sm:max-w-xl 2xl:max-w-6xl"
+        title={transaction.description}
+      >
+        {transaction.description}
+      </h2>
       <strong
         className={
           transaction.amount < 0
@@ -181,18 +186,6 @@ export function CategorizationCard({
               ) : null;
             })}
           </select>
-          {suggested && (
-            <p className="mt-2 text-sm text-lime-300">
-              {transaction.suggestionSource === "phraseRule" ? (
-                <>
-                  Matched phrase rule:{" "}
-                  <strong>{transaction.matchedPhrase}</strong>
-                </>
-              ) : (
-                <>Suggested from similar previous transactions: {suggested}</>
-              )}
-            </p>
-          )}
         </div>
         <button disabled={!categoryId} type="submit">
           <Check className="mr-1 inline" size={17} />
@@ -218,6 +211,17 @@ export function CategorizationCard({
         >
           + Save as phrase rule
         </button>
+      )}
+      {suggested && (
+        <p className="mt-2 text-sm text-lime-300">
+          {transaction.suggestionSource === "phraseRule" ? (
+            <>
+              Matched phrase rule: <strong>{transaction.matchedPhrase}</strong>
+            </>
+          ) : (
+            <>Suggested from similar previous transactions: {suggested}</>
+          )}
+        </p>
       )}
       {savingRule && (
         <form
